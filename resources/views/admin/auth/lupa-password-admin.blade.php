@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lupa Password - Panti Wredha BDK</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="{{ asset('assets/css/auth-admin.css') }}">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-auth">
+
+    <div id="lupaApp" class="container-fluid p-0 d-flex h-100" v-cloak>
+        <div class="split-left">
+            <img src="{{ asset('assets/images/loginadmin.png') }}" alt="Illustration">
+        </div>
+
+        <div class="split-right">
+            <div class="auth-box">
+                <h2 class="auth-title auth-title-small">Lupa Password?</h2>
+                <p class="auth-subtitle">Masukkan email yang terdaftar, kami akan mengirimkan link untuk reset password.</p>
+                
+                <form @submit.prevent="kirimLink">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <input type="email" class="form-control form-control-auth" v-model="email" placeholder="Email Terdaftar" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-white" :disabled="isLoading">
+                        @{{ isLoading ? 'Mengirim...' : 'Kirim Link Reset' }}
+                    </button>
+                    
+                    <br>
+                    <a href="{{ url('/admin/login') }}" class="link-back">
+                        <i class="fas fa-arrow-left me-2"></i>Kembali ke Login
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ asset('assets/js/lupa-password.js') }}"></script>
+</body>
+</html>

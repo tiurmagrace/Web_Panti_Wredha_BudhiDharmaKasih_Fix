@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah Donasi - Panti Wredha BDK</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    
+    <link rel="stylesheet" href="{{ asset('assets/css/style-admin.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/tambah-donasi.css') }}">
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-admin">
+
+    <div id="tambahDonasiApp" class="admin-wrapper" v-cloak>
+        <header class="top-header">
+            <div class="header-left">
+                <a href="{{ url('/admin') }}" style="text-decoration: none;">
+                    <img src="{{ asset('assets/images/1.png') }}" alt="Logo BDK" class="header-logo">
+                </a>
+            </div>
+            <div class="header-center"></div>
+            <div class="header-right">
+                <a href="{{ url('/admin/notifikasi') }}" class="text-white text-decoration-none me-3 position-relative" :class="{ active: currentUrl && currentUrl.includes('notifikasi') }">
+                    <i class="far fa-bell icon-bell"></i>
+                    <span v-if="unreadCount > 0" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="font-size: 0.6rem;">
+                        </span>
+                </a>
+                <span class="user-text me-3">Hai, ADMIN!</span>
+                <i class="fas fa-user-circle icon-profile"></i>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <ul class="list-unstyled">
+                <li><a href="{{ url('/admin') }}"><i class="fas fa-folder"></i> Dashboard</a></li>
+                <li>
+                    <a href="#penghuniSub" data-bs-toggle="collapse" class="dropdown-toggle">
+                        <i class="fas fa-file-invoice"></i> Manajemen Data Penghuni
+                    </a>
+                    <ul class="collapse list-unstyled sidebar-submenu" id="penghuniSub">
+                        <li><a href="{{ url('/admin/kelola-penghuni') }}"><i class="fas fa-list"></i> Data Penghuni</a></li>
+                        <li><a href="{{ url('/admin/tambah-penghuni') }}"><i class="fas fa-plus"></i> Tambah Data</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#donasiSub" data-bs-toggle="collapse" class="dropdown-toggle" aria-expanded="true">
+                        <i class="fas fa-box-open"></i> Manajemen Distribusi Donasi
+                    </a>
+                    <ul class="collapse show list-unstyled sidebar-submenu" id="donasiSub">
+                        <li><a href="{{ url('/admin/kelola-donasi') }}"><i class="fas fa-history"></i> Riwayat</a></li>
+                        <li><a href="{{ url('/admin/tambah-donasi') }}" class="active"><i class="fas fa-plus"></i> Tambah Donasi</a></li>
+                        <li><a href="{{ url('/admin/laporan-donasi') }}"><i class="fas fa-file-alt"></i> Laporan</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#barangSub" data-bs-toggle="collapse" class="dropdown-toggle">
+                        <i class="fas fa-boxes"></i> Manajemen Stok Barang
+                    </a>
+                    <ul class="collapse list-unstyled sidebar-submenu" id="barangSub">
+                        <li><a href="{{ url('/admin/data-barang') }}"><i class="fas fa-clipboard-list"></i> Data Stok Barang</a></li>
+                        <li><a href="{{ url('/admin/tambah-barang') }}"><i class="fas fa-plus"></i> Tambah Stok Barang</a></li>
+                        <li><a href="{{ url('/admin/ambil-stok') }}"><i class="fas fa-minus-square"></i> Ambil Stok Barang</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="logout-wrapper">
+                <a href="javascript:void(0)" @click="logoutAdmin" class="text-white text-decoration-none d-flex align-items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div> 
+        </aside>
+
+        <main class="main-content" style="padding: 25px;">
+            <div class="content-body">
+                <div class="page-title-banner" style="background-color: #1a5c7a; color: white; padding: 15px; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px;">
+                    Tambah Donasi
+                </div>
+                <div class="form-container">
+                    <div class="section-header-teal">Data Distribusi</div>
+                    
+                    <div class="form-group-row">
+                        <label class="label-custom">Donatur</label>
+                        <input type="text" class="input-custom" v-model="form.donatur">
+                    </div>
+                    <div class="form-group-row">
+                        <label class="label-custom">Jenis Bantuan</label>
+                        <select class="input-custom" v-model="form.jenis">
+                            <option value="" disabled selected>-- Pilih Jenis --</option>
+                            <option>Barang</option>
+                            <option>Tunai</option>
+                        </select>
+                    </div>
+                    <div class="form-group-row">
+                        <label class="label-custom">Detail Bantuan</label>
+                        <select v-if="form.jenis === 'Barang'" class="input-custom" v-model="form.detail">
+                            <option disabled value="">-- Pilih Kategori --</option>
+                            <option>Sembako</option>
+                            <option>Pakaian</option>
+                            <option>Alat Kebersihan</option>
+                            <option>Alat Kesehatan</option>
+                            <option>Peralatan Rumah Tangga</option>
+                            <option>Elektronik</option>
+                            <option>Perlengkapan Tidur</option>
+                            <option>Buku & Hiburan</option>
+                            <option>Perlengkapan Medis</option>
+                        </select>
+                        <input v-else type="text" class="input-custom" v-model="form.detail" placeholder="Contoh: Transfer Bank BCA / Cash">
+                    </div>
+                    <div class="form-group-row">
+                        <label class="label-custom">Jumlah</label>
+                        <input type="text" class="input-custom" v-model="form.jumlah" placeholder="Contoh: 5 Karung / Rp 1.000.000">
+                    </div>
+                    <div class="form-group-row">
+                        <label class="label-custom">Tanggal Distribusi</label>
+                        <input type="date" class="input-custom" v-model="form.tanggal_raw">
+                    </div>
+                    <div class="form-group-row">
+                        <label class="label-custom">Status</label>
+                        <select class="input-custom" v-model="form.status">
+                            <option value="" disabled selected>-- Pilih Status --</option>
+                            <option>Langsung</option>
+                            <option>Tidak Langsung</option>
+                        </select>
+                    </div>
+                    <div class="form-group-row">
+                        <label class="label-custom">Petugas</label>
+                        <input type="text" class="input-custom" v-model="form.petugas" placeholder="Nama petugas penerima">
+                    </div>
+                    <div class="form-group-row" style="align-items: flex-start;">
+                        <label class="label-custom" style="padding-top: 10px;">Bukti Penerimaan</label>
+                        <div>
+                            <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none;" accept="image/*">
+                            <div class="photo-upload-box" @click="$refs.fileInput.click()">
+                                <img v-if="previewImage" :src="previewImage" class="photo-preview">
+                                <i v-else class="fas fa-camera camera-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-end mt-5">
+                        <button @click="validateAndSubmit" class="btn-submit-custom">
+                            <i class="fas fa-save me-2"></i> Submit
+                        </button>
+                    </div>
+                    <div v-if="showError" class="error-message">
+                        <i class="fas fa-exclamation-circle me-2"></i> Mohon lengkapi semua data distribusi terlebih dahulu!
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('assets/js/main-admin.js') }}"></script>
+    <script src="{{ asset('assets/js/tambah-donasi.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password - Panti Wredha BDK</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="{{ asset('assets/css/auth-admin.css') }}">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-auth">
+
+    <div id="resetApp" class="container-fluid p-0 d-flex h-100" v-cloak>
+        <div class="split-left">
+            <img src="{{ asset('assets/images/loginadmin.png') }}" alt="Illustration">
+        </div>
+
+        <div class="split-right">
+            <div class="auth-box">
+                <h2 class="auth-title auth-title-small">Password Baru</h2>
+                <p class="auth-subtitle">Silakan buat password baru untuk akunmu.</p>
+                
+                <form @submit.prevent="resetPass">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input :type="showPass1 ? 'text' : 'password'" class="form-control form-control-auth" v-model="pass1" placeholder="Password Baru" required style="border-right: none;">
+                        <span class="input-group-text" style="border-left: none; border-right: 1px solid white; cursor: pointer;" @click="showPass1 = !showPass1">
+                            <i class="fas" :class="showPass1 ? 'fa-eye' : 'fa-eye-slash'"></i>
+                        </span>
+                    </div>
+
+                    <div class="input-group mb-4">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input :type="showPass2 ? 'text' : 'password'" class="form-control form-control-auth" v-model="pass2" placeholder="Konfirmasi Password" required style="border-right: none;">
+                        <span class="input-group-text" style="border-left: none; border-right: 1px solid white; cursor: pointer;" @click="showPass2 = !showPass2">
+                            <i class="fas" :class="showPass2 ? 'fa-eye' : 'fa-eye-slash'"></i>
+                        </span>
+                    </div>
+
+                    <button type="submit" class="btn btn-white" :disabled="isLoading">
+                        @{{ isLoading ? 'Menyimpan...' : 'Simpan Password' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ asset('assets/js/reset-password.js') }}"></script>
+</body>
+</html>

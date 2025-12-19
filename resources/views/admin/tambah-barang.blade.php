@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah Stok Barang - Panti Wredha BDK</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    
+    <link rel="stylesheet" href="{{ asset('assets/css/style-admin.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/tambah-barang.css') }}">
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-admin">
+
+    <div id="tambahBarangApp" class="admin-wrapper" v-cloak>
+        <header class="top-header">
+            <div class="header-left">
+                <a href="{{ url('/admin') }}" style="text-decoration: none;">
+                    <img src="{{ asset('assets/images/1.png') }}" alt="Logo BDK" class="header-logo">
+                </a>
+            </div>
+            <div class="header-center"></div>
+            <div class="header-right">
+                <a href="{{ url('/admin/notifikasi') }}" class="text-white text-decoration-none me-3 position-relative" :class="{ active: currentUrl && currentUrl.includes('notifikasi') }">
+                    <i class="far fa-bell icon-bell"></i>
+                    <span v-if="unreadCount > 0" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="font-size: 0.6rem;">
+                        </span>
+                </a>
+                <span class="user-text me-3">Hai, ADMIN!</span>
+                <i class="fas fa-user-circle icon-profile"></i>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <ul class="list-unstyled">
+                <li><a href="{{ url('/admin') }}"><i class="fas fa-folder"></i> Dashboard</a></li>
+                <li>
+                    <a href="#penghuniSub" data-bs-toggle="collapse" class="dropdown-toggle">
+                        <i class="fas fa-file-invoice"></i> Manajemen Data Penghuni
+                    </a>
+                    <ul class="collapse list-unstyled sidebar-submenu" id="penghuniSub">
+                        <li><a href="{{ url('/admin/kelola-penghuni') }}"><i class="fas fa-list"></i> Data Penghuni</a></li>
+                        <li><a href="{{ url('/admin/tambah-penghuni') }}"><i class="fas fa-plus"></i> Tambah Data</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#donasiSub" data-bs-toggle="collapse" class="dropdown-toggle">
+                        <i class="fas fa-box-open"></i> Manajemen Distribusi Donasi
+                    </a>
+                    <ul class="collapse list-unstyled sidebar-submenu" id="donasiSub">
+                        <li><a href="{{ url('/admin/kelola-donasi') }}"><i class="fas fa-history"></i> Riwayat</a></li>
+                        <li><a href="{{ url('/admin/tambah-donasi') }}"><i class="fas fa-plus"></i> Tambah Donasi</a></li>
+                        <li><a href="{{ url('/admin/laporan-donasi') }}"><i class="fas fa-file-alt"></i> Laporan</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#barangSub" data-bs-toggle="collapse" class="dropdown-toggle" aria-expanded="true">
+                        <i class="fas fa-boxes"></i> Manajemen Stok Barang
+                    </a>
+                    <ul class="collapse show list-unstyled sidebar-submenu" id="barangSub">
+                        <li><a href="{{ url('/admin/data-barang') }}"><i class="fas fa-clipboard-list"></i> Data Stok Barang</a></li>
+                        <li><a href="{{ url('/admin/tambah-barang') }}" class="active"><i class="fas fa-plus"></i> Tambah Stok Barang</a></li>
+                        <li><a href="{{ url('/admin/ambil-stok') }}"><i class="fas fa-minus-square"></i> Ambil Stok Barang</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="logout-wrapper">
+                <a href="javascript:void(0)" @click="logoutAdmin" class="text-white text-decoration-none d-flex align-items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div> 
+        </aside>
+
+        <main class="main-content" style="padding: 25px;">
+            <div class="content-body">
+                <div class="page-title-banner" style="background-color: #1a5c7a; color: white; padding: 15px; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px;">
+                    Tambah Barang Baru
+                </div>
+                <div class="form-container">
+                    <div class="section-header-teal">Informasi Barang</div>
+                    
+                    <div class="form-group-row">
+                        <label class="label-custom">Kategori</label>
+                        <select class="input-custom" v-model="form.kategori">
+                            <option value="" disabled selected>-- Pilih Kategori --</option>
+                            <option>Sembako</option><option>Pakaian</option><option>Alat Kebersihan</option><option>Alat Kesehatan</option><option>Peralatan Rumah Tangga</option><option>Elektronik</option><option>Perlengkapan Tidur</option><option>Buku & Hiburan</option><option>Perlengkapan Medis</option>
+                        </select>
+                    </div>
+                    <div class="form-group-row"><label class="label-custom">Nama Barang</label><input type="text" class="input-custom" v-model="form.nama"></div>
+                    <div class="form-group-row">
+                        <label class="label-custom">Satuan</label>
+                        <select class="input-custom" v-model="form.satuan">
+                            <option>Pcs</option><option>Pack</option><option>Botol</option><option>Karung</option><option>Dus</option><option>Strip</option><option>Unit</option><option>Sachet</option><option>Bungkus</option>
+                        </select>
+                    </div>
+                    
+                    <div class="section-header-teal mt-4">Stok Awal</div>
+                    <div class="form-group-row"><label class="label-custom">Jumlah Stok Awal</label><input type="number" class="input-custom" v-model="form.stok"></div>
+                    <div class="form-group-row"><label class="label-custom">Tanggal Masuk</label><input type="date" class="input-custom" v-model="form.tgl_masuk_raw"></div>
+                    <div class="form-group-row">
+                        <label class="label-custom">Kondisi Barang</label>
+                        <select class="input-custom" v-model="form.kondisi">
+                            <option>Baik</option><option>Rusak Ringan</option><option>Perlu Perbaikan</option>
+                        </select>
+                    </div>
+                    <div class="form-group-row">
+                        <label class="label-custom">Opsi Expired</label>
+                        <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="cekExpired" v-model="hasExpired" style="width: 20px; height: 20px; cursor: pointer;">
+                            <label for="cekExpired" style="cursor: pointer; color: #333;">Barang ini ada masa kadaluwarsa?</label>
+                        </div>
+                    </div>
+                    <div class="form-group-row" v-if="hasExpired"><label class="label-custom">Tgl. Kadaluwarsa</label><input type="date" class="input-custom" v-model="form.expired_raw"></div>
+                    
+                    <div class="form-group-row" style="align-items: flex-start;">
+                        <label class="label-custom" style="padding-top: 10px;">Foto Barang</label>
+                        <div>
+                            <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none;" accept="image/*">
+                            <div class="photo-upload-box" @click="$refs.fileInput.click()">
+                                <img v-if="previewImage" :src="previewImage" class="photo-preview">
+                                <i v-else class="fas fa-camera camera-icon"></i>
+                            </div>
+                            <div class="text-center mt-1" style="font-size: 0.85rem; color: #666;">*Unggah Foto</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-end mt-5">
+                        <button @click="validateAndSubmit" class="btn-submit-custom">Simpan Data</button>
+                    </div>
+                    <div v-if="showError" class="error-message">Mohon lengkapi semua data barang (termasuk Kategori) terlebih dahulu!</div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('assets/js/main-admin.js') }}"></script>
+    <script src="{{ asset('assets/js/tambah-barang.js') }}"></script>
+</body>
+</html>

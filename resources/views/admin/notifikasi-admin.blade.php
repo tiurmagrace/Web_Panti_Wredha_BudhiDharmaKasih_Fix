@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pusat Notifikasi - Panti Wredha BDK</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    
+    <link rel="stylesheet" href="{{ asset('assets/css/style-admin.css') }}"> 
+    <link rel="stylesheet" href="{{ asset('assets/css/notifikasi.css') }}">
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-admin">
+
+    <div id="notifApp" class="admin-wrapper" v-cloak>
+        
+        <header class="top-header">
+            <div class="header-left">
+                <a href="{{ url('/admin') }}" style="text-decoration: none;">
+                    <img src="{{ asset('assets/images/1.png') }}" alt="Logo BDK" class="header-logo">
+                </a>
+            </div>
+
+            <div class="header-center">
+                <div class="search-box">
+                    <input type="text" v-model="searchQuery" placeholder="Cari info apapun di sini..." name="search">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <a href="{{ url('/admin/notifikasi') }}" class="text-white text-decoration-none me-3 position-relative" :class="{ active: currentUrl && currentUrl.includes('notifikasi') }">
+                    <i class="far fa-bell icon-bell"></i>
+                    <span v-if="unreadCount > 0" 
+                        class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" 
+                        style="font-size: 0.6rem;">
+                        </span>
+                </a>
+                <span class="user-text me-3">Hai, ADMIN!</span>
+                <i class="fas fa-user-circle icon-profile"></i>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <ul class="list-unstyled">
+                <li><a href="{{ url('/admin') }}"><i class="fas fa-folder"></i> Dashboard</a></li>
+                <li>
+                    <a href="#penghuniSub" data-bs-toggle="collapse" class="dropdown-toggle">
+                        <i class="fas fa-file-invoice"></i> Manajemen Data Penghuni
+                    </a>
+                    <ul class="collapse list-unstyled sidebar-submenu" id="penghuniSub">
+                        <li><a href="{{ url('/admin/kelola-penghuni') }}"><i class="fas fa-list"></i> Data Penghuni</a></li>
+                        <li><a href="{{ url('/admin/tambah-penghuni') }}"><i class="fas fa-plus"></i> Tambah Data</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#donasiSub" data-bs-toggle="collapse" class="dropdown-toggle">
+                        <i class="fas fa-box-open"></i> Manajemen Distribusi Donasi
+                    </a>
+                    <ul class="collapse list-unstyled sidebar-submenu" id="donasiSub">
+                        <li><a href="{{ url('/admin/kelola-donasi') }}"><i class="fas fa-history"></i> Riwayat</a></li>
+                        <li><a href="{{ url('/admin/tambah-donasi') }}"><i class="fas fa-plus"></i> Tambah Donasi</a></li>
+                        <li><a href="{{ url('/admin/laporan-donasi') }}"><i class="fas fa-file-alt"></i> Laporan</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#barangSub" data-bs-toggle="collapse" class="dropdown-toggle">
+                        <i class="fas fa-boxes"></i> Manajemen Stok Barang
+                    </a>
+                    <ul class="collapse list-unstyled sidebar-submenu" id="barangSub">
+                        <li><a href="{{ url('/admin/data-barang') }}"><i class="fas fa-clipboard-list"></i> Data Stok Barang</a></li>
+                        <li><a href="{{ url('/admin/tambah-barang') }}"><i class="fas fa-plus"></i> Tambah Stok Barang</a></li>
+                        <li><a href="{{ url('/admin/ambil-stok') }}"><i class="fas fa-minus-square"></i> Ambil Stok Barang</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="logout-wrapper">
+                <a href="javascript:void(0)" @click="logoutAdmin" class="text-white text-decoration-none d-flex align-items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div> 
+        </aside>
+
+        <main class="main-content">
+            <div class="content-body">
+                <div class="page-title-banner text-center" style="margin-bottom: 20px;">
+                    Pusat Notifikasi
+                </div>
+
+                <div class="notif-list-container">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-dark fw-bold">
+                            <i class="fas fa-list me-1"></i> Total: @{{ filteredList.length }} Notifikasi
+                        </div>
+                        <div>
+                            <select v-model="filterType" class="filter-select">
+                                <option value="">Semua Tipe</option>
+                                <option value="donasi">Donasi Masuk</option>
+                                <option value="stok">Stok Menipis</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div v-if="filteredList.length === 0" class="text-center py-5 text-muted">
+                        <i class="far fa-bell-slash fa-3x mb-3" style="opacity: 0.5;"></i>
+                        <p class="fw-bold">Tidak ada notifikasi yang cocok.</p>
+                    </div>
+
+                    <div v-else>
+                        <div v-for="(notif, index) in filteredList" :key="index" class="notif-item">
+                            <div class="notif-icon-box" :class="notif.type === 'stok' ? 'bg-soft-orange' : 'bg-soft-green'">
+                                <i v-if="notif.type === 'donasi'" class="fas fa-box-open"></i>
+                                <i v-else class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            
+                            <div class="notif-content flex-grow-1">
+                                <h6>@{{ notif.title }}</h6>
+                                <p>@{{ notif.text }}</p>
+                            </div>
+
+                            <div class="notif-date">@{{ notif.dateDisplay }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('assets/js/notifikasi.js') }}"></script>
+</body>
+</html>

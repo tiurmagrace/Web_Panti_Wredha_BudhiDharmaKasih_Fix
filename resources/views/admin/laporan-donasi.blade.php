@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Distribusi Donasi - Panti Wredha BDK</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    
+    <link rel="stylesheet" href="{{ asset('assets/css/style-admin.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/laporan-donasi.css') }}">
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-admin">
+
+    <div id="laporanApp" class="admin-wrapper" v-cloak>
+        <header class="top-header">
+            <div class="header-left">
+                <a href="{{ url('/admin') }}" style="text-decoration: none;">
+                    <img src="{{ asset('assets/images/1.png') }}" alt="Logo BDK" class="header-logo">
+                </a>
+            </div>
+            <div class="header-center">
+                <div class="search-box">
+                    <input type="text" v-model="searchQuery" placeholder="Cari donatur, jenis, dll..." name="search">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+            <div class="header-right">
+                <a href="{{ url('/admin/notifikasi') }}" class="text-white text-decoration-none me-3 position-relative" :class="{ active: currentUrl && currentUrl.includes('notifikasi') }">
+                    <i class="far fa-bell icon-bell"></i>
+                    <span v-if="unreadCount > 0" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="font-size: 0.6rem;">
+                        </span>
+                </a>
+                <span class="user-text me-3">Hai, ADMIN!</span>
+                <i class="fas fa-user-circle icon-profile"></i>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <ul class="list-unstyled">
+                <li><a href="{{ url('/admin') }}"><i class="fas fa-folder"></i> Dashboard</a></li>
+                <li>
+                    <a href="#penghuniSub" data-bs-toggle="collapse" class="dropdown-toggle">
+                        <i class="fas fa-file-invoice"></i> Manajemen Data Penghuni
+                    </a>
+                    <ul class="collapse list-unstyled sidebar-submenu" id="penghuniSub">
+                        <li><a href="{{ url('/admin/kelola-penghuni') }}"><i class="fas fa-list"></i> Data Penghuni</a></li>
+                        <li><a href="{{ url('/admin/tambah-penghuni') }}"><i class="fas fa-plus"></i> Tambah Data</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#donasiSub" data-bs-toggle="collapse" class="dropdown-toggle" aria-expanded="true">
+                        <i class="fas fa-box-open"></i> Manajemen Distribusi Donasi
+                    </a>
+                    <ul class="collapse show list-unstyled sidebar-submenu" id="donasiSub">
+                        <li><a href="{{ url('/admin/kelola-donasi') }}"><i class="fas fa-history"></i> Riwayat</a></li>
+                        <li><a href="{{ url('/admin/tambah-donasi') }}"><i class="fas fa-plus"></i> Tambah Donasi</a></li>
+                        <li><a href="{{ url('/admin/laporan-donasi') }}" class="active"><i class="fas fa-file-alt"></i> Laporan</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#barangSub" data-bs-toggle="collapse" class="dropdown-toggle">
+                        <i class="fas fa-boxes"></i> Manajemen Stok Barang
+                    </a>
+                    <ul class="collapse list-unstyled sidebar-submenu" id="barangSub">
+                        <li><a href="{{ url('/admin/data-barang') }}"><i class="fas fa-clipboard-list"></i> Data Stok Barang</a></li>
+                        <li><a href="{{ url('/admin/tambah-barang') }}"><i class="fas fa-plus"></i> Tambah Stok Barang</a></li>
+                        <li><a href="{{ url('/admin/ambil-stok') }}"><i class="fas fa-minus-square"></i> Ambil Stok Barang</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="logout-wrapper">
+                <a href="javascript:void(0)" @click="logoutAdmin" class="text-white text-decoration-none d-flex align-items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div> 
+        </aside>
+
+        <main class="main-content" style="padding: 25px;">
+            <div class="content-body">
+                <div class="page-title-banner" style="margin-bottom: 25px;">
+                    Laporan Distribusi Donasi
+                </div>
+                
+                <div v-if="alertStatus === 'sent'" class="alert alert-info text-center fw-bold mb-4" style="background-color: #d1ecf1; color: #0c5460; border-radius: 50px;">
+                    Laporan berhasil dikirim! <i class="fas fa-check-circle"></i>
+                </div>
+
+                <div class="glass-panel" style="margin-top: 0; background-color: #ffffff; color: #333; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 25px;">
+                    
+                    <div class="row g-2 mb-4 align-items-end" style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
+                        <div class="col-md-3">
+                            <label class="filter-label">Bulan</label>
+                            <select v-model="filterBulan" class="filter-select">
+                                <option value="">Semua Bulan</option><option value="01">Januari</option><option value="02">Februari</option><option value="03">Maret</option><option value="04">April</option><option value="05">Mei</option><option value="06">Juni</option><option value="07">Juli</option><option value="08">Agustus</option><option value="09">September</option><option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="filter-label">Tahun</label>
+                            <select v-model="filterTahun" class="filter-select"><option value="">Semua Tahun</option><option value="2024">2024</option><option value="2025">2025</option></select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="filter-label">Jenis Bantuan</label>
+                            <select v-model="filterJenis" class="filter-select"><option value="">Semua Jenis</option><option value="Tunai">Tunai</option><option value="Barang">Barang</option></select>
+                        </div>
+                        <div class="col-md-3">
+                            <button v-if="filterJenis || filterBulan || filterTahun" @click="resetFilter" class="btn-reset-filter"><i class="fas fa-undo"></i> Reset Filter</button>
+                        </div>
+                        <div class="col-12 mt-2" v-if="filteredList.length > 0"><small class="text-muted"><i>Menampilkan @{{ filteredList.length }} data laporan.</i></small></div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle mb-0">
+                            <thead>
+                                <tr><th>NO</th><th>Tanggal</th><th>Donatur</th><th>Jenis</th><th>Detail</th><th>Jumlah</th><th>Status</th><th>Petugas</th><th class="text-center">Aksi</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item, index) in filteredList" :key="index">
+                                    <td>@{{ index + 1 }}</td>
+                                    <td>@{{ item.tanggal }}</td>
+                                    <td>@{{ item.donatur }}</td>
+                                    <td>@{{ item.jenis }}</td>
+                                    <td>@{{ item.detail }}</td>
+                                    <td>@{{ item.jumlah }}</td>
+                                    <td>@{{ item.status }}</td>
+                                    <td>@{{ item.petugas }}</td>
+                                    <td>
+                                        <div class="d-flex justify-content-center">
+                                            <button @click="goToGeneratePage(item)" class="btn-generate" title="Generate PDF Laporan">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="filteredList.length === 0">
+                                    <td colspan="9" class="text-center py-5 text-muted">Data tidak ditemukan / Filter tidak cocok.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('assets/js/main-admin.js') }}"></script>
+    <script src="{{ asset('assets/js/laporan-donasi.js') }}"></script>
+</body>
+</html>
