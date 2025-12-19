@@ -25,12 +25,8 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="facility-text">
-                        <h3>Kamar Tidur</h3>
-                        <p>
-                            Setiap kamar tidur dilengkapi fasilitas yang menunjang kenyamanan penghuni,
-                            seperti kasur bersih, meja kursi, kipas angin, serta pispot
-                            untuk membantu aktivitas lansia.
-                        </p>
+                        <h3>Kamar tidur</h3>
+                        <p>Setiap kamar tidur dilengkapi dengan fasilitas yang menunjang kenyamanan penghuni, seperti kasur yang bersih dan empuk, meja dan kursi untuk beraktivitas ringan, kipas angin untuk menjaga sirkulasi udara tetap sejuk, serta pispot sebagai alat bantu buang air yang memudahkan lansia dalam beraktivitas sehari-hari.</p>
                     </div>
                 </div>
             </div>
@@ -43,10 +39,7 @@
                 <div class="col-lg-6">
                     <div class="facility-text">
                         <h3>Paviliun Bougenville Khusus Pria</h3>
-                        <p>
-                            Paviliun pria dirancang untuk menciptakan lingkungan yang tenang,
-                            bersih, dan nyaman bagi lansia laki-laki.
-                        </p>
+                        <p>Paviliun pria dirancang khusus untuk menciptakan lingkungan yang tenang dan nyaman bagi penghuni lansia laki-laki. Setiap ruang diatur agar bersih, rapi, serta mendukung privasi dan kenyamanan dalam beristirahat maupun beraktivitas sehari-hari.</p>
                     </div>
                 </div>
             </div>
@@ -74,11 +67,8 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="facility-text">
-                        <h3>Paviliun Mawar Khusus Wanita</h3>
-                        <p>
-                            Paviliun ini menyediakan ruang yang nyaman dan aman
-                            untuk menunjang aktivitas harian lansia perempuan.
-                        </p>
+                        <h3>Pavilion Sneek Khusus Wanita</h3>
+                        <p>Paviliun wanita menghadirkan suasana yang hangat dan tertata dengan baik, memberikan kenyamanan dan ketenangan bagi para lansia perempuan. Fasilitas di dalamnya disesuaikan untuk mendukung aktivitas harian dengan tetap menjaga privasi dan keamanan.</p>
                     </div>
                 </div>
             </div>
@@ -90,11 +80,8 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="facility-text">
-                        <h3>Paviliun Temanggung Khusus Pasangan</h3>
-                        <p>
-                            Paviliun pasangan dirancang untuk menjaga privasi,
-                            kenyamanan, dan keharmonisan suami istri lansia.
-                        </p>
+                        <h3>Pavilion Temanggung Khusus Pasangan</h3>
+                        <p>Paviliun suami istri dirancang untuk memberikan tempat tinggal yang layak dan nyaman bagi pasangan lansia. Dengan penataan ruang yang efisien dan fasilitas yang mendukung kebutuhan bersama, paviliun ini memastikan privasi, keamanan, dan kenyamanan tetap terjaga. sehingga pasangan dapat menjalani hari-hari mereka dengan damai dan tenteram.</p>
                     </div>
                 </div>
             </div>
@@ -107,10 +94,7 @@
                 <div class="col-lg-6">
                     <div class="facility-text">
                         <h3>Ruang Aula</h3>
-                        <p>
-                            Digunakan untuk kegiatan bersama seperti senam,
-                            ibadah, hiburan, dan acara khusus lainnya.
-                        </p>
+                        <p>Ruang aula berfungsi sebagai tempat berkumpul untuk berbagai kegiatan bersama, seperti senam lansia, ibadah, hiburan, atau acara khusus lainnya. Ruangan ini luas, sejuk, dan nyaman, mendukung interaksi sosial yang sehat di antara para penghuni.</p>
                     </div>
                 </div>
             </div>
@@ -123,10 +107,7 @@
                 <div class="col-lg-6">
                     <div class="facility-text">
                         <h3>Taman Doa</h3>
-                        <p>
-                            Ruang terbuka yang tenang untuk persekutuan,
-                            perenungan, dan ibadah padang.
-                        </p>
+                        <p>Taman Doa dihadirkan sebagai ruang terbuka yang tenang dan teduh, menjadi tempat persekutuan dan perenungan firman Tuhan di tengah keindahan alam. Suasana alam yang asri mendukung ibadah padang yang khusyuk, menghadirkan kedamaian dan keintiman bersama Sang Pencipta.</p>
                     </div>
                 </div>
             </div>
@@ -139,10 +120,7 @@
                 <div class="col-lg-6">
                     <div class="facility-text">
                         <h3>Balai Pengobatan</h3>
-                        <p>
-                            Menyediakan layanan kesehatan dasar
-                            dengan tenaga dan peralatan pendukung.
-                        </p>
+                        <p>Balai pengobatan tersedia untuk memberikan layanan kesehatan dasar bagi seluruh penghuni. Dilengkapi dengan peralatan medis sederhana dan tenaga kesehatan yang siap membantu dalam pemeriksaan rutin maupun penanganan keluhan ringan.</p>
                     </div>
                 </div>
             </div>
@@ -155,11 +133,8 @@
                 <div class="col-lg-6">
                     <div class="facility-text">
                         <h3>Taman</h3>
-                        <p>
-                            Area hijau untuk bersantai, menikmati udara segar,
-                            dan mempererat kebersamaan para lansia.
-                        </p>
-                    </div>
+                        <p>Taman yang rindang di panti jompo menjadi tempat beristirahat dan bersantal bagi para lansia. Dengan pepohonan yang teduh dan udara segar, taman ini menghadirkan ketenangan, mempererat kebersamaan, dan memberi ruang untuk menikmati hari dengan damai.</p>
+                </div>
                 </div>
             </div>
 
@@ -171,10 +146,7 @@
                 <div class="col-lg-6">
                     <div class="facility-text">
                         <h3>Dapur</h3>
-                        <p>
-                            Tempat penyajian makanan bergizi
-                            yang disiapkan dengan penuh kasih.
-                        </p>
+                        <p>Dapur menjadi jantung yang hangat di panti, tempat di mana hidangan bergizi disiapkan dengan penuh kasih. Setiap aroma yang tercium dan rasa yang tersaji menjadi bagian dari perhatian dan kepedulian bagi para lansia, memastikan kebutuhan mereka terpenuhi dengan baik, aman, dan penuh cinta.</p>
                     </div>
                 </div>
             </div>
@@ -187,10 +159,7 @@
                 <div class="col-lg-6">
                     <div class="facility-text">
                         <h3>Tempat Laundry</h3>
-                        <p>
-                            Menjaga kebersihan pakaian lansia
-                            agar tetap sehat dan nyaman setiap hari.
-                        </p>
+                        <p>Tempat laundry di panti berperan penting dalam menjaga kebersihan dan kenyamanan para lansia. Dengan proses yang tertata rapi, pakaian dicuci dan dirawat dengan teliti, memastikan setiap penghuni tetap merasa segar, bersih, dan terjaga kesehatannya setiap hari.</p>
                     </div>
                 </div>
             </div>

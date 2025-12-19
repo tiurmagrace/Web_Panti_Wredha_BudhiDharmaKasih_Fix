@@ -17,6 +17,7 @@
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-10">
+
                     <div class="donasi-direct-content">
 
                         <p>
@@ -26,6 +27,7 @@
                         </p>
 
                         <h3>Ungkapan Kasih / Donasi dapat ditransfer ke rekening:</h3>
+
                         <ul>
                             <li>BCA KCP Pondok Indah, No. rekening xxxxxxxxxxx atas nama Yayasan BDK</li>
                             <li>Mandiri KCP Purbalingga, No. rekening xxxxxxxxxxx atas nama Yayasan BDK</li>
@@ -36,16 +38,23 @@
                             salam sukacita dari Oma dan Opa di Panti Wredha Budi Dharma Kasih.
                         </p>
 
-                        {{-- 🔑 GERBANG LOGIN ADA DI SINI --}}
-                        <button @click="pilihDonasi('barang')">
-                            Formulir Donasi Barang
-                        </button>
+                        {{-- TOMBOL DONASI (DISAMAIN DENGAN HTML LAMA) --}}
+                        <div class="donasi-buttons">
+                            <button
+                                class="btn btn-donasi"
+                                @click="pilihDonasi('barang')">
+                                Formulir Donasi Barang
+                            </button>
 
-                        <button @click="pilihDonasi('tunai')">
-                            Formulir Donasi Tunai
-                        </button>
+                            <button
+                                class="btn btn-donasi"
+                                @click="pilihDonasi('tunai')">
+                                Formulir Donasi Tunai
+                            </button>
+                        </div>
 
                     </div>
+
                 </div>
             </div>
         </div>

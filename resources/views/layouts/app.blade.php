@@ -34,7 +34,7 @@
     {{-- 🔥 SATU ROOT VUE UNTUK SEMUA --}}
     <div id="homepageApp">
 
-        <main>
+        <main class="content-wrapper">
             @yield('content')
         </main>
 

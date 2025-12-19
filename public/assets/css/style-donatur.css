@@ -21,7 +21,6 @@ body {
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    /* PATH BACKGROUND DIPERBAIKI: Naik satu level dari folder css */
     background: url('../images/2.png') center/cover fixed no-repeat;
     font-family: var(--font-body);
     font-weight: 400;
@@ -29,11 +28,14 @@ body {
     flex-direction: column;
 }
 
-.content-wrapper {
-    flex-grow: 1; /* Memastikan footer selalu di bawah */
+main.content-wrapper {
+    flex-grow: 1;                      /* 🔥 bikin konten dorong footer */
+    background-color: var(--color-light-bg);
 }
 
-a { text-decoration: none; }
+a { 
+    text-decoration: none; 
+}
 
 /* Typography Global */
 h1, h2, h3, h4 {
@@ -187,16 +189,18 @@ h2 {
 }
 
 .notif-icon img {
-    width: 32px;
+    width: 40px;
     height: 32px;
-    transition: all 0.3s ease;
+    object-fit: contain;
     filter: brightness(0) invert(1);
+    cursor: pointer;
 }
 
 .notif-icon img:hover {
     transform: scale(1.1);
     opacity: 0.8;
 }
+
 
 /* ==========================================================================
    5. HOME PAGE SECTIONS
@@ -853,4 +857,21 @@ input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display:
     font-weight: bold;
     padding: 0 2px;
     border-radius: 2px;
+}
+
+/* FIX OTP INPUT */
+.otp-input-group {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.otp-box {
+    width: 55px !important;
+    height: 55px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid #999;
 }

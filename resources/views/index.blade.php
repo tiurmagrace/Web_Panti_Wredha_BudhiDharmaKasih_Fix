@@ -217,27 +217,6 @@
                 </div>
             </section>
         </main>
-
-        <!-- LOGOUT MODAL -->
-        <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title fw-bold text-danger">Konfirmasi Keluar</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body text-center py-4">
-                        <i class="fas fa-sign-out-alt fa-3x text-danger mb-3"></i>
-                        <p class="mb-0 fw-medium fs-5">Apakah Anda yakin ingin keluar dari akun?</p>
-                        <p class="text-muted small">Anda harus login kembali untuk mengakses fitur donasi.</p>
-                    </div>
-                    <div class="modal-footer border-0 justify-content-center pb-4">
-                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                        <button type="button" class="btn btn-danger rounded-pill px-4" @click="confirmLogout">Ya, Keluar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 @endsection
