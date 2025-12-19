@@ -88,72 +88,56 @@
                     </div>
 
                     <nav class="mt-5" v-if="totalPages > 1">
-                        <ul class="pagination justify-content-center">
-                            
-                            <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: currentPage === page }">
-                                <a class="page-link page-num" href="javascript:void(0)" @click="setPage(page)">@{{ page }}</a>
+                        <ul class="pagination justify-content-center align-items-center gap-2">
+
+                            <!-- PREV -->
+                            <li class="page-item">
+                                <a
+                                    class="page-link"
+                                    href="#"
+                                    @click.prevent="prevPage"
+                                >
+                                    « PREV
+                                </a>
                             </li>
 
+                            <!-- PAGE NUMBER -->
+                            <li
+                                class="page-item"
+                                v-for="page in totalPages"
+                                :key="page"
+                                :class="{ active: currentPage === page }"
+                            >
+                                <a
+                                    class="page-link page-num"
+                                    href="#"
+                                    @click.prevent="setPage(page)"
+                                >
+                                    @{{ page }}
+                                </a>
+                            </li>
+
+                            <!-- NEXT -->
                             <li class="page-item">
-                                <a class="page-link" href="javascript:void(0)" @click="nextPage" aria-label="Next">
-                                    <span aria-hidden="true">NEXT &raquo;</span>
+                                <a
+                                    class="page-link"
+                                    href="#"
+                                    @click.prevent="nextPage"
+                                >
+                                    NEXT »
                                 </a>
                             </li>
 
                         </ul>
+
+                        <!-- PAGE INFO -->
+                        <div class="text-center mt-3 text-muted small">
+                            Page @{{ currentPage }} of @{{ totalPages }}
+                        </div>
                     </nav>
                 </div>
             </section>
 
-            <!-- Gallery Modals -->
-            <div class="modal fade gallery-modal" id="popup-1" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content"><div class="modal-body">
-                        <button type="button" class="btn-close-custom" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
-                        <img src="{{ asset('assets/images/7.png') }}" alt="Dokumentasi 1">
-                    </div></div>
-                </div>
-            </div>
-            <div class="modal fade gallery-modal" id="popup-2" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content"><div class="modal-body">
-                        <button type="button" class="btn-close-custom" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
-                        <img src="{{ asset('assets/images/8.png') }}" alt="Dokumentasi 2">
-                    </div></div>
-                </div>
-            </div>
-            <div class="modal fade gallery-modal" id="popup-3" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content"><div class="modal-body">
-                        <button type="button" class="btn-close-custom" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
-                        <img src="{{ asset('assets/images/9.png') }}" alt="Dokumentasi 3">
-                    </div></div>
-                </div>
-            </div>
-            <div class="modal fade gallery-modal" id="popup-4" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content"><div class="modal-body">
-                        <button type="button" class="btn-close-custom" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
-                        <img src="{{ asset('assets/images/7.png') }}" alt="Dokumentasi 4">
-                    </div></div>
-                </div>
-            </div>
-            <div class="modal fade gallery-modal" id="popup-5" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content"><div class="modal-body">
-                        <button type="button" class="btn-close-custom" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
-                        <img src="{{ asset('assets/images/8.png') }}" alt="Dokumentasi 5">
-                    </div></div>
-                </div>
-            </div>
-            <div class="modal fade gallery-modal" id="popup-6" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content"><div class="modal-body">
-                        <button type="button" class="btn-close-custom" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
-                        <img src="{{ asset('assets/images/9.png') }}" alt="Dokumentasi 6">
-                    </div></div>
-                </div>
-            </div>
             
             <!-- ABOUT SECTION 2 -->
             <section class="about py-5">
@@ -261,3 +245,4 @@
 @push('scripts')
 <script src="{{ asset('assets/js/homepage-vue.js') }}"></script>
 @endpush
+

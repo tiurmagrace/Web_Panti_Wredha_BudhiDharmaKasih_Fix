@@ -1,22 +1,23 @@
-<!-- FOOTER -->
-<footer class="footer-new" id="footerApp">
+<footer class="footer-new">
     <div class="container">
         <div class="row">
-            
-            {{-- BRAND + SEARCH --}}
+
+            <!-- BRAND + SEARCH -->
             <div class="col-lg-4 col-md-6 footer-brand-desc">
                 <h2>Panti Wredha BDK</h2>
                 <p class="footer-text">
                     "Kasih Kristus Untuk Semua" Melayani dan mendampingi para lansia menjalani hari tua dengan penuh makna.
                 </p>
 
-                {{-- SEARCH FOOTER --}}
+                <!-- 🔍 SEARCH (NYAMBUNG KE HOMEPAGE VUE) -->
                 <div class="footer-search">
                     <form @submit.prevent="performSearch">
-                        <input type="text"
-                               v-model="searchQuery"
-                               placeholder="Cari informasi di halaman ini..."
-                               required>
+                        <input
+                            type="text"
+                            v-model="searchQuery"
+                            placeholder="Cari informasi di halaman ini..."
+                            autocomplete="off"
+                        >
                         <button type="submit">
                             <i class="fas fa-search"></i>
                         </button>
@@ -24,7 +25,7 @@
                 </div>
             </div>
 
-            {{-- NAVIGASI --}}
+            <!-- NAVIGASI -->
             <div class="col-lg-2 col-md-6 footer-col-mobile">
                 <h5 class="footer-heading">NAVIGASI</h5>
                 <ul class="footer-links">
@@ -35,31 +36,23 @@
                 </ul>
             </div>
 
-            {{-- SOSIAL MEDIA --}}
+            <!-- SOSIAL -->
             <div class="col-lg-3 col-md-6 footer-col-mobile">
                 <h5 class="footer-heading">IKUTI KAMI</h5>
                 <div class="footer-social-icons mt-3">
-                    <a href="https://www.tiktok.com/@pantiwredabdk510?_r=1&_t=ZS-91bsHEJrAr2"
-                       target="_blank"
-                       title="TikTok">
-                        <img src="{{ asset('assets/images/tiktok.png') }}" alt="TikTok">
+                    <a href="https://www.tiktok.com/@pantiwredabdk510" target="_blank">
+                        <img src="{{ asset('assets/images/tiktok.png') }}">
                     </a>
-
-                    <a href="https://youtube.com/@pantiwredhabudidharmakasih8513?si=I7ovYPB4FIXtWqES"
-                       target="_blank"
-                       title="YouTube">
-                        <img src="{{ asset('assets/images/yt.png') }}" alt="YouTube">
+                    <a href="https://youtube.com/@pantiwredhabudidharmakasih8513" target="_blank">
+                        <img src="{{ asset('assets/images/yt.png') }}">
                     </a>
-
-                    <a href="https://www.facebook.com/pantiwredha.bdk"
-                       target="_blank"
-                       title="Facebook">
-                        <img src="{{ asset('assets/images/facebook.png') }}" alt="Facebook">
+                    <a href="https://www.facebook.com/pantiwredha.bdk" target="_blank">
+                        <img src="{{ asset('assets/images/facebook.png') }}">
                     </a>
                 </div>
             </div>
 
-            {{-- JAM KERJA --}}
+            <!-- JAM KERJA -->
             <div class="col-lg-3 col-md-6">
                 <h5 class="footer-heading">JAM KERJA</h5>
                 <ul class="footer-hours list-unstyled">
@@ -68,29 +61,25 @@
                     <li class="text-warning"><span>Minggu</span> <span>Tutup</span></li>
                 </ul>
             </div>
-
         </div>
 
-        {{-- CONTACT BAR --}}
         <div class="footer-contact-bar">
             <div class="row">
-                <div class="col-lg-5 col-md-6 contact-item">
+                <div class="col-md-4 contact-item">
                     <i class="fas fa-map-marker-alt"></i>
                     <div>
                         <span>Lokasi Kami</span>
                         <h6>Jl. May. Jend. Soengkono 510, Purbalingga</h6>
                     </div>
                 </div>
-
-                <div class="col-lg-3 col-md-6 contact-item">
+                <div class="col-md-4 contact-item">
                     <i class="fas fa-phone-volume"></i>
                     <div>
                         <span>Hubungi Kami</span>
                         <h6>(0281) 891-829</h6>
                     </div>
                 </div>
-
-                <div class="col-lg-4 col-md-6 contact-item">
+                <div class="col-md-4 contact-item">
                     <i class="fas fa-envelope"></i>
                     <div>
                         <span>Email</span>
@@ -100,12 +89,8 @@
             </div>
         </div>
 
-        {{-- COPYRIGHT --}}
         <div class="footer-copyright">
-            <p class="m-0">
-                © 2025 Yayasan Panti Wredha Budi Dharma Kasih. All Rights Reserved.
-            </p>
+            © 2025 Yayasan Panti Wredha Budi Dharma Kasih
         </div>
-
     </div>
 </footer>
