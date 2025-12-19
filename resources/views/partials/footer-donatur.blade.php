@@ -1,4 +1,4 @@
-<footer class="footer-new">
+<footer class="footer-new" id="footerApp">
     <div class="container">
         <div class="row">
 
