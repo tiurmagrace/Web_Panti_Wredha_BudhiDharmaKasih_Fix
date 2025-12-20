@@ -1,3 +1,8 @@
+// ==========================================
+// 2. lupa-password-admin.js - FIXED FOR LARAVEL
+// ==========================================
+// File: public/assets/js/lupa-password-admin.js
+
 const { createApp } = Vue;
 
 createApp({
@@ -18,7 +23,8 @@ createApp({
                     text: `Link reset telah dikirim ke ${this.email}`,
                     confirmButtonColor: '#1a5c7a'
                 }).then(() => {
-                    window.location.href = 'reset-password.html'; 
+                    // FIXED: Redirect ke reset password Laravel
+                    window.location.href = '/admin/reset-password'; 
                 });
             }, 1000);
         }

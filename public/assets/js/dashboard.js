@@ -1,6 +1,6 @@
 // --- SECURITY CHECK (SATPAM) ---
 if (!localStorage.getItem('adminLoggedIn')) {
-    window.location.href = 'auth/login.html';
+    window.location.href = '/admin/login';
 }
 
 const { createApp } = window.Vue;
@@ -14,10 +14,17 @@ createApp({
             unreadCount: 0,
             activities: [], 
             feedbacks: [], 
-            totalPenghuni: 0, totalUang: 0, totalBarang: 0, 
-            totalStok: 0, stokMenipis: 0, jumlahHampirExpired: 0,
-            totalSembako: 0, totalPakaian: 0, totalObat: 0,
-            currentUrl: window.location.href // Biar aktif menu sidebar
+            totalPenghuni: 0, 
+            totalUang: 0, 
+            totalBarang: 0, 
+            totalStok: 0, 
+            stokMenipis: 0, 
+            jumlahHampirExpired: 0,
+            totalSembako: 0, 
+            totalPakaian: 0, 
+            totalObat: 0,
+            currentUrl: window.location.href,
+            activePage: 'dashboard' // ✅ FIXED: ganti dari currentPage
         }
     },
     computed: {
@@ -52,12 +59,81 @@ createApp({
         }
     },
     mounted() {
+        console.log('✅ Dashboard Mounted!');
+        
+        // ✅ Inisialisasi dummy data barang kalau belum ada
+        this.initDummyBarang();
+        
         this.loadNotifications();
         this.loadActivities();
         this.loadFeedbacks();
         this.calculateStats();
+        
+        // ✅ AUTO REFRESH setiap 5 detik
+        setInterval(() => {
+            this.calculateStats();
+            console.log('🔄 Stats auto-refreshed');
+        }, 5000);
     },
     methods: {
+        // ✅ Method untuk inisialisasi dummy data barang
+        initDummyBarang() {
+            const barangList = JSON.parse(localStorage.getItem('barangList'));
+            
+            if (!barangList || barangList.length === 0) {
+                const dummyBarang = [
+                    { 
+                        kode: 'SMB-123',
+                        nama: 'Beras Premium', 
+                        kategori: 'Sembako', 
+                        tgl_masuk: '01/01/2025', 
+                        tgl_keluar: '-', 
+                        brg_masuk: '50 Kg', 
+                        brg_keluar: '10 Kg', 
+                        sisa_stok: '40',
+                        satuan: 'Kg',
+                        stok_awal: 50,
+                        stok_keluar: 10,
+                        expired: '31/12/2025',
+                        kondisi: 'Baik'
+                    },
+                    { 
+                        kode: 'OBT-456',
+                        nama: 'Paracetamol', 
+                        kategori: 'Obat-obatan', 
+                        tgl_masuk: '15/01/2025', 
+                        tgl_keluar: '-', 
+                        brg_masuk: '100 Strip', 
+                        brg_keluar: '95 Strip', 
+                        sisa_stok: '5',
+                        satuan: 'Strip',
+                        stok_awal: 100,
+                        stok_keluar: 95,
+                        expired: '28/02/2025',
+                        kondisi: 'Baik'
+                    },
+                    { 
+                        kode: 'ALT-789',
+                        nama: 'Masker Medis', 
+                        kategori: 'Alat Kesehatan', 
+                        tgl_masuk: '10/01/2025', 
+                        tgl_keluar: '-', 
+                        brg_masuk: '500 Pcs', 
+                        brg_keluar: '450 Pcs', 
+                        sisa_stok: '50',
+                        satuan: 'Pcs',
+                        stok_awal: 500,
+                        stok_keluar: 450,
+                        expired: '-',
+                        kondisi: 'Baik'
+                    }
+                ];
+                
+                localStorage.setItem('barangList', JSON.stringify(dummyBarang));
+                console.log('💾 Created dummy barang data with', dummyBarang.length, 'items');
+            }
+        },
+        
         formatRupiah(angka) {
             return new Intl.NumberFormat('id-ID').format(angka);
         },
@@ -109,7 +185,6 @@ createApp({
 
         loadActivities() {
             const logs = JSON.parse(localStorage.getItem('activityLog')) || [];
-            // Slice().reverse() agar tidak mengubah array asli
             this.activities = logs.slice().reverse().slice(0, 5);
         },
 
@@ -172,24 +247,38 @@ createApp({
             const penghuniList = JSON.parse(localStorage.getItem('penghuniBaru'));
             this.totalPenghuni = (penghuniList && Array.isArray(penghuniList)) ? penghuniList.length : 0;
 
-            // 2. Statistik Donasi (Bulan Ini)
+            // 2. Load Donasi & Barang dari localStorage
             const donasiList = JSON.parse(localStorage.getItem('donasiList')) || [];
+            const barangList = JSON.parse(localStorage.getItem('barangList')) || [];
+
+            // ✅ FIXED: Hitung Total Donasi (ALL TIME - REALTIME)
+            let totalUangAllTime = 0;
+            let totalBarangAllTime = 0;
+
+            donasiList.forEach(d => {
+                if (d.jenis === 'Tunai') {
+                    totalUangAllTime += this.parseNumber(d.jumlah);
+                } else if (d.jenis === 'Barang') {
+                    let qty = parseInt(d.jumlah) || 1;
+                    totalBarangAllTime += qty;
+                }
+            });
+
+            // Set Total Donasi Realtime
+            this.totalUang = totalUangAllTime;
+            this.totalBarang = totalBarangAllTime;
+
+            // ✅ Hitung Donasi Bulan Ini (untuk card ke-3)
             const now = new Date();
             const currentMonth = now.getMonth() + 1;
             const currentYear = now.getFullYear();
 
-            let hitungUangBulanIni = 0;
             let hitungSembako = 0;
             let hitungPakaian = 0;
             let hitungObat = 0;
-            let hitungBarangAllTime = 0; 
 
             donasiList.forEach(d => {
-                if (d.jenis === 'Barang') {
-                    let qty = parseInt(d.jumlah) || 1; 
-                    hitungBarangAllTime += qty;
-                }
-
+                // Cek apakah donasi bulan ini
                 let isThisMonth = false;
                 if (d.tanggal && d.tanggal.includes('/')) {
                     const parts = d.tanggal.split('/'); 
@@ -200,32 +289,41 @@ createApp({
                     }
                 }
 
-                if (isThisMonth) {
-                    if (d.jenis === 'Tunai') {
-                        hitungUangBulanIni += this.parseNumber(d.jumlah);
-                    }
-                    if (d.jenis === 'Barang') {
-                        let detail = d.detail ? d.detail.toLowerCase() : '';
-                        if (detail.includes('sembako') || detail.includes('makanan') || detail.includes('minuman')) {
-                            hitungSembako++;
-                        } else if (detail.includes('pakaian') || detail.includes('baju') || detail.includes('celana')) {
-                            hitungPakaian++;
-                        } else if (detail.includes('obat') || detail.includes('kesehatan') || detail.includes('medis')) {
-                            hitungObat++;
-                        }
+                // Hitung barang bulan ini berdasarkan kategori
+                if (isThisMonth && d.jenis === 'Barang') {
+                    let kategori = d.kategori ? d.kategori.toLowerCase() : '';
+                    let detail = d.detail ? d.detail.toLowerCase() : '';
+                    
+                    if (kategori.includes('sembako') || 
+                        detail.includes('sembako') || 
+                        detail.includes('makanan') || 
+                        detail.includes('minuman') ||
+                        detail.includes('beras') ||
+                        detail.includes('mie')) {
+                        hitungSembako++;
+                    } else if (kategori.includes('pakaian') || 
+                               detail.includes('pakaian') || 
+                               detail.includes('baju') || 
+                               detail.includes('celana')) {
+                        hitungPakaian++;
+                    } else if (kategori.includes('obat') ||
+                               kategori.includes('kesehatan') ||
+                               kategori.includes('medis') ||
+                               detail.includes('obat') || 
+                               detail.includes('kesehatan') || 
+                               detail.includes('medis')) {
+                        hitungObat++;
                     }
                 }
             });
 
-            this.totalUang = hitungUangBulanIni;
-            this.totalBarang = hitungBarangAllTime;
             this.totalSembako = hitungSembako;
             this.totalPakaian = hitungPakaian;
             this.totalObat = hitungObat;
 
-            // 3. Statistik Stok
-            const barangList = JSON.parse(localStorage.getItem('barangList')) || [];
+            // 3. ✅ Statistik Stok Gudang (REALTIME)
             this.totalStok = barangList.length;
+            
             this.stokMenipis = barangList.filter(b => {
                 let sisa = parseInt(b.sisa_stok);
                 return !isNaN(sisa) && sisa < 5;
@@ -245,17 +343,30 @@ createApp({
                 }
             });
             this.jumlahHampirExpired = countExp;
+
+            // ✅ Console log untuk debugging
+            console.log('📊 Stats Updated (Realtime):', {
+                totalUang: this.totalUang,
+                totalBarang: this.totalBarang,
+                totalStok: this.totalStok,
+                stokMenipis: this.stokMenipis,
+                hampirExpired: this.jumlahHampirExpired
+            });
         },
 
         logoutAdmin() {
             Swal.fire({
-                title: 'Keluar?', text: "Sesi admin akan diakhiri.", icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6',
+                title: 'Keluar?', 
+                text: "Sesi admin akan diakhiri.", 
+                icon: 'warning',
+                showCancelButton: true, 
+                confirmButtonColor: '#d33', 
+                cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Ya, Logout'
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
-                    window.location.href = 'auth/login.html';
+                    window.location.href = '/admin/login';
                 }
             });
         }

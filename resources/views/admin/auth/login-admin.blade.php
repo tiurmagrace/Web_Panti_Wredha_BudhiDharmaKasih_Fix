@@ -1,55 +1,53 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Admin - Panti Wredha BDK</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    <link rel="stylesheet" href="../../assets/css/auth-admin.css">
-    
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-</head>
-<body class="bg-auth">
+{{-- ==========================================
+     1. login-admin.blade.php
+     ========================================== --}}
+@extends('layouts.admin-auth')
 
-    <div id="loginApp" class="container-fluid p-0 d-flex h-100">
-        <div class="split-left">
-            <img src="../../assets/images/loginadmin.png" alt="Admin Illustration">
-        </div>
+@section('title', 'Login Admin')
 
-        <div class="split-right">
-            <div class="auth-box">
-                <h2 class="auth-title">Admin Login</h2>
-                
-                <form @submit.prevent="handleLogin">
-                    <div class="input-group mb-3">
-                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                        <input type="text" class="form-control form-control-auth" v-model="username" placeholder="Username" required>
-                    </div>
-                    
-                    <div class="input-group mb-2">
-                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                        <input :type="showPassword ? 'text' : 'password'" class="form-control form-control-auth" v-model="password" placeholder="Password" required style="border-right: none;">
-                        
-                        <span class="input-group-text" style="border-left: none; border-right: 1px solid white; cursor: pointer;" @click="showPassword = !showPassword">
-                            <i class="fas" :class="showPassword ? 'fa-eye' : 'fa-eye-slash'"></i>
-                        </span>
-                    </div>
-
-                    <div class="text-end w-100">
-                        <a href="{{ url('/admin/lupa-password') }}" class="forgot-link">Lupa Password?</a>
-                    </div>
-
-                    <button type="submit" class="btn btn-white" :disabled="isLoading">
-                        @{{ isLoading ? 'Memuat...' : 'Login Masuk' }}
-                    </button>
-                </form>
-            </div>
-        </div>
+@section('content')
+<div id="loginApp" class="container-fluid p-0 d-flex h-100">
+    <div class="split-left">
+        <img src="{{ asset('assets/images/loginadmin.png') }}" alt="Admin Illustration">
     </div>
 
-    <script src="../../assets/js/login-admin.js"></script>
-</body>
-</html>
+    <div class="split-right">
+        <div class="auth-box">
+            <h2 class="auth-title">Admin Login</h2>
+            
+            <form @submit.prevent="handleLogin">
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                    <input type="text" class="form-control form-control-auth" v-model="username" placeholder="Username" required>
+                </div>
+                
+                <div class="input-group mb-2">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    <input :type="showPassword ? 'text' : 'password'" class="form-control form-control-auth" v-model="password" placeholder="Password" required style="border-right: none;">
+                    
+                    <span class="input-group-text" style="border-left: none; border-right: 1px solid white; cursor: pointer;" @click="showPassword = !showPassword">
+                        <i class="fas" :class="showPassword ? 'fa-eye' : 'fa-eye-slash'"></i>
+                    </span>
+                </div>
+
+                <div class="text-end w-100">
+                    <a href="{{ route('admin.lupa-password') }}" class="forgot-link">Lupa Password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-white" :disabled="isLoading">
+                    @{{ isLoading ? 'Memuat...' : 'Login Masuk' }}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script src="{{ asset('assets/js/login-admin.js') }}"></script>
+@endpush
+
+
+
+
+

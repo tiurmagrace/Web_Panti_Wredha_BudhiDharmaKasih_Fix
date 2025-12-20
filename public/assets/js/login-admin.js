@@ -1,3 +1,8 @@
+// ==========================================
+// 1. login-admin.js - FIXED FOR LARAVEL
+// ==========================================
+// File: public/assets/js/login-admin.js
+
 const { createApp } = Vue;
 
 createApp({
@@ -32,7 +37,8 @@ createApp({
                         showConfirmButton: false
                     }).then(() => {
                         localStorage.setItem('adminLoggedIn', 'true');
-                        window.location.href = '../index.html'; 
+                        // FIXED: Redirect ke dashboard Laravel
+                        window.location.href = '/admin/dashboard'; 
                     });
                 } else {
                     Swal.fire('Akses Ditolak', 'Username atau Password salah!', 'error');
@@ -42,3 +48,8 @@ createApp({
         }
     }
 }).mount('#loginApp');
+
+
+
+
+

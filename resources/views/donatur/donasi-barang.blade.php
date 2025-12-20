@@ -30,7 +30,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Nomor HP</label>
+                                <label class="form-label">Nomor HP *</label>
                                 <input type="tel"
                                        class="form-control"
                                        :class="{ 'is-invalid': errors.hp }"
@@ -77,6 +77,22 @@
                                        placeholder="Contoh: Beras, Mie Instan, Baju Layak Pakai">
                                 <div class="invalid-feedback" v-if="errors.barang">
                                     @{{ errors.barang }}
+                                </div>
+                            </div>
+
+                            {{-- ✅ TAMBAHAN: Field Jumlah Barang --}}
+                            <div class="mb-3">
+                                <label class="form-label">Jumlah / Kuantitas *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       :class="{ 'is-invalid': errors.jumlah }"
+                                       v-model="form.jumlah"
+                                       placeholder="Contoh: 5 Karung, 10 Kardus, 2 Lusin">
+                                <div class="invalid-feedback" v-if="errors.jumlah">
+                                    @{{ errors.jumlah }}
+                                </div>
+                                <div class="form-text text-light opacity-75">
+                                    Tuliskan jumlah barang beserta satuannya
                                 </div>
                             </div>
 

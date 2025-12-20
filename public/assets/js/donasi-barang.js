@@ -12,6 +12,7 @@ createApp({
                 email: '',
                 kategori: '',
                 barang: '',
+                jumlah: '',     // ✅ TAMBAHAN: Jumlah barang (misal: 5 Karung)
                 catatan: '',
                 fileBukti: null
             },
@@ -75,7 +76,7 @@ createApp({
         },
 
         // ===============================
-        // SUBMIT DONASI BARANG
+        // SUBMIT DONASI BARANG (✅ FIXED)
         // ===============================
         kirimDonasi() {
             this.errors = {};
@@ -88,6 +89,10 @@ createApp({
                 this.errors.barang = 'Nama barang wajib diisi';
             }
 
+            if (!this.form.jumlah) {
+                this.errors.jumlah = 'Jumlah barang wajib diisi';
+            }
+
             if (!this.form.fileBukti) {
                 this.errors.fileBukti = 'Foto barang / resi wajib diupload';
             }
@@ -96,24 +101,53 @@ createApp({
                 return;
             }
 
-            // SIMPAN KE LOCALSTORAGE (SIMULASI DB)
-            const data = JSON.parse(localStorage.getItem('donasiList')) || [];
+            // ✅ FIXED: Format data sesuai dengan kelola-donasi admin
+            const dataLama = JSON.parse(localStorage.getItem('donasiList')) || [];
 
-            data.push({
+            // Format tanggal
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const tanggalFormatted = `${day}/${month}/${year}`;
+            const tanggalRaw = `${year}-${month}-${day}`;
+
+            const donasiBaru = {
                 id: Date.now(),
-                jenis: 'Barang',
-                nama: this.form.nama,
-                email: this.form.email,
-                hp: this.form.hp,
-                kategori: this.form.kategori,
-                barang: this.form.barang,
-                catatan: this.form.catatan,
-                foto: this.form.fileBukti,
-                tanggal: new Date().toLocaleDateString('id-ID'),
-                status: 'Menunggu Verifikasi'
-            });
+                tanggal: tanggalFormatted,      // Format: dd/mm/yyyy
+                tanggal_raw: tanggalRaw,        // Format: yyyy-mm-dd
+                donatur: this.form.nama,        // ✅ Pakai 'donatur' bukan 'nama'
+                jenis: 'Barang',                // ✅ Jenis donasi
+                detail: this.form.barang,       // ✅ Detail bantuan (nama barang)
+                jumlah: this.form.jumlah,       // ✅ Jumlah barang
+                status: 'Tidak Langsung',       // ✅ Status (dari donatur online)
+                petugas: '-',                   // ✅ Petugas (belum ada, nanti admin isi)
+                kategori: this.form.kategori,   // Data tambahan untuk stok barang
+                email: this.form.email,         // Data tambahan untuk laporan
+                hp: this.form.hp,               // Data tambahan
+                catatan: this.form.catatan,     // Data tambahan
+                foto: this.form.fileBukti       // Foto barang/resi
+            };
 
-            localStorage.setItem('donasiList', JSON.stringify(data));
+            dataLama.push(donasiBaru);
+            localStorage.setItem('donasiList', JSON.stringify(dataLama));
+
+            // ✅ SIMPAN LOG AKTIVITAS
+            let logs = JSON.parse(localStorage.getItem('activityLog')) || [];
+            let jam = new Date().toLocaleString('id-ID', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            logs.push({ 
+                text: `Donasi Barang masuk dari: ${this.form.nama} (${this.form.barang} - ${this.form.jumlah})`, 
+                time: jam 
+            });
+            localStorage.setItem('activityLog', JSON.stringify(logs));
+
+            console.log('✅ Donasi Barang berhasil disimpan!');
 
             // TAMPILKAN MODAL SUKSES
             const modalEl = document.getElementById('modalSuccess');
@@ -125,6 +159,7 @@ createApp({
             // RESET FORM (BIAR GA DOUBLE SUBMIT)
             this.form.hp = '';
             this.form.barang = '';
+            this.form.jumlah = '';
             this.form.catatan = '';
             this.form.fileBukti = null;
 

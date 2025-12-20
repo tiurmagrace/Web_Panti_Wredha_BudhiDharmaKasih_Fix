@@ -10,6 +10,7 @@ createApp({
                 nama: '',
                 hp: '',
                 email: '',
+                jumlah: '',  // ✅ TAMBAHAN: Jumlah uang
                 catatan: '',
                 file: null
             },
@@ -73,13 +74,17 @@ createApp({
         },
 
         // ===============================
-        // SUBMIT DONASI TUNAI
+        // SUBMIT DONASI TUNAI (✅ FIXED)
         // ===============================
         kirimDonasi() {
             this.errors = {};
 
             if (!this.form.hp) {
                 this.errors.hp = 'Nomor HP wajib diisi';
+            }
+
+            if (!this.form.jumlah) {
+                this.errors.jumlah = 'Jumlah donasi wajib diisi';
             }
 
             if (!this.form.file) {
@@ -90,22 +95,52 @@ createApp({
                 return;
             }
 
-            // SIMPAN KE LOCALSTORAGE (SIMULASI DB)
-            const data = JSON.parse(localStorage.getItem('donasiList')) || [];
+            // ✅ FIXED: Format data sesuai dengan kelola-donasi admin
+            const dataLama = JSON.parse(localStorage.getItem('donasiList')) || [];
 
-            data.push({
+            // Format tanggal
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const tanggalFormatted = `${day}/${month}/${year}`;
+            const tanggalRaw = `${year}-${month}-${day}`;
+
+            const donasiBaru = {
                 id: Date.now(),
-                jenis: 'Tunai',
-                nama: this.form.nama,
-                email: this.form.email,
-                hp: this.form.hp,
-                catatan: this.form.catatan,
-                foto: this.form.file,
-                tanggal: new Date().toLocaleDateString('id-ID'),
-                status: 'Menunggu Verifikasi'
-            });
+                tanggal: tanggalFormatted,      // Format: dd/mm/yyyy
+                tanggal_raw: tanggalRaw,        // Format: yyyy-mm-dd
+                donatur: this.form.nama,        // ✅ Pakai 'donatur' bukan 'nama'
+                jenis: 'Tunai',                 // ✅ Jenis donasi
+                detail: 'Uang Tunai',           // ✅ Detail bantuan
+                jumlah: this.form.jumlah,       // ✅ Jumlah uang
+                status: 'Tidak Langsung',       // ✅ Status (dari donatur online)
+                petugas: '-',                   // ✅ Petugas (belum ada, nanti admin isi)
+                email: this.form.email,         // Data tambahan untuk laporan
+                hp: this.form.hp,               // Data tambahan
+                catatan: this.form.catatan,     // Data tambahan
+                foto: this.form.file            // Bukti transfer
+            };
 
-            localStorage.setItem('donasiList', JSON.stringify(data));
+            dataLama.push(donasiBaru);
+            localStorage.setItem('donasiList', JSON.stringify(dataLama));
+
+            // ✅ SIMPAN LOG AKTIVITAS
+            let logs = JSON.parse(localStorage.getItem('activityLog')) || [];
+            let jam = new Date().toLocaleString('id-ID', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            logs.push({ 
+                text: `Donasi Tunai masuk dari: ${this.form.nama} (Rp ${this.form.jumlah})`, 
+                time: jam 
+            });
+            localStorage.setItem('activityLog', JSON.stringify(logs));
+
+            console.log('✅ Donasi Tunai berhasil disimpan!');
 
             // MODAL SUKSES
             const modalEl = document.getElementById('modalSuccess');
@@ -116,6 +151,7 @@ createApp({
 
             // RESET FORM
             this.form.hp = '';
+            this.form.jumlah = '';
             this.form.catatan = '';
             this.form.file = null;
 

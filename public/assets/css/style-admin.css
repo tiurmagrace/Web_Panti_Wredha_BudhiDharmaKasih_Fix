@@ -90,7 +90,7 @@ body.bg-auth {
     align-items: center;
     justify-content: space-between;
     padding: 0 30px; 
-    z-index: 1050;
+    z-index: 1040;
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
@@ -146,7 +146,7 @@ body.bg-auth {
     
     overflow-y: auto;
     overflow-x: hidden;
-    z-index: 1040;
+    z-index: 1030;
     padding-top: 20px;
     border-right: 1px solid rgba(0,0,0,0.1);
 }
@@ -332,29 +332,6 @@ body.bg-auth {
     width: 100%;
 }
 
-/* --- CUSTOM MODAL (DETAIL & EDIT) --- */
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Latar gelap transparan */
-    z-index: 2000; /* Di atas segalanya */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(3px); /* Efek blur dikit biar kece */
-}
-
-.modal-teal-card {
-    background-color: #21698a; /* Warna Teal Card */
-    width: 600px;
-    max-width: 90%;
-    border-radius: 15px;
-    padding: 30px;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    max-height: 90vh; /* Biar ga kepotong kalau layar pendek */
-    overflow-y: auto;
-}
 
 .photo-frame-circle {
     width: 150px;

@@ -30,7 +30,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Nomor HP</label>
+                                <label class="form-label">Nomor HP *</label>
                                 <input type="tel"
                                        class="form-control"
                                        :class="{ 'is-invalid': errors.hp }"
@@ -49,6 +49,22 @@
                                        v-model="form.email">
                                 <div class="invalid-feedback" v-if="errors.email">
                                     @{{ errors.email }}
+                                </div>
+                            </div>
+
+                            {{-- ✅ TAMBAHAN: Field Jumlah Uang --}}
+                            <div class="mb-3">
+                                <label class="form-label">Jumlah Donasi (Rp) *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       :class="{ 'is-invalid': errors.jumlah }"
+                                       v-model="form.jumlah"
+                                       placeholder="Contoh: 500.000 atau 1.000.000">
+                                <div class="invalid-feedback" v-if="errors.jumlah">
+                                    @{{ errors.jumlah }}
+                                </div>
+                                <div class="form-text text-light opacity-75">
+                                    Masukkan nominal tanpa "Rp" atau titik pemisah
                                 </div>
                             </div>
 

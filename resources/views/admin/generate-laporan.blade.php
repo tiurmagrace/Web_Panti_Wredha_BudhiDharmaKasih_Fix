@@ -1,124 +1,61 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generate Laporan - Panti Wredha BDK</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    
-    <link rel="stylesheet" href="{{ asset('assets/css/style-admin.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/generate-laporan.css') }}">
-    
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-</head>
-<body class="bg-admin">
+@extends('layouts.admin')
 
-    <div id="generateApp" class="admin-wrapper" v-cloak>
-        <header class="top-header">
-            <div class="header-left">
-                <a href="{{ url('/admin') }}" style="text-decoration: none;">
-                    <img src="{{ asset('assets/images/1.png') }}" alt="Logo BDK" class="header-logo">
-                </a>
-            </div>
-            <div class="header-center"></div>
-            <div class="header-right">
-                <a href="{{ url('/admin/notifikasi') }}" class="text-white text-decoration-none me-3 position-relative" :class="{ active: currentUrl && currentUrl.includes('notifikasi') }">
-                    <i class="far fa-bell icon-bell"></i>
-                    <span v-if="unreadCount > 0" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="font-size: 0.6rem;">
-                        </span>
-                </a>
-                <span class="user-text me-3">Hai, ADMIN!</span>
-                <i class="fas fa-user-circle icon-profile"></i>
-            </div>
-        </header>
+@section('title', 'Generate Laporan')
 
-        <aside class="sidebar">
-            <ul class="list-unstyled">
-                <li><a href="{{ url('/admin') }}"><i class="fas fa-folder"></i> Dashboard</a></li>
-                <li>
-                    <a href="#penghuniSub" data-bs-toggle="collapse" class="dropdown-toggle">
-                        <i class="fas fa-file-invoice"></i> Manajemen Data Penghuni
-                    </a>
-                    <ul class="collapse list-unstyled sidebar-submenu" id="penghuniSub">
-                        <li><a href="{{ url('/admin/kelola-penghuni') }}"><i class="fas fa-list"></i> Data Penghuni</a></li>
-                        <li><a href="{{ url('/admin/tambah-penghuni') }}"><i class="fas fa-plus"></i> Tambah Data</a></li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="#donasiSub" data-bs-toggle="collapse" class="dropdown-toggle" aria-expanded="true">
-                        <i class="fas fa-box-open"></i> Manajemen Distribusi Donasi
-                    </a>
-                    <ul class="collapse show list-unstyled sidebar-submenu" id="donasiSub">
-                        <li><a href="{{ url('/admin/kelola-donasi') }}"><i class="fas fa-history"></i> Riwayat</a></li>
-                        <li><a href="{{ url('/admin/tambah-donasi') }}"><i class="fas fa-plus"></i> Tambah Donasi</a></li>
-                        <li><a href="{{ url('/admin/laporan-donasi') }}" class="active"><i class="fas fa-file-alt"></i> Laporan</a></li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="#barangSub" data-bs-toggle="collapse" class="dropdown-toggle">
-                        <i class="fas fa-boxes"></i> Manajemen Stok Barang
-                    </a>
-                    <ul class="collapse list-unstyled sidebar-submenu" id="barangSub">
-                        <li><a href="{{ url('/admin/data-barang') }}"><i class="fas fa-clipboard-list"></i> Data Stok Barang</a></li>
-                        <li><a href="{{ url('/admin/tambah-barang') }}"><i class="fas fa-plus"></i> Tambah Stok Barang</a></li>
-                        <li><a href="{{ url('/admin/ambil-stok') }}"><i class="fas fa-minus-square"></i> Ambil Stok Barang</a></li>
-                    </ul>
-                </li>
-            </ul>
-            <div class="logout-wrapper">
-                <a href="javascript:void(0)" @click="logoutAdmin" class="text-white text-decoration-none d-flex align-items-center gap-2">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </div> 
-        </aside>
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/generate-laporan.css') }}">
+<style>
+    .header-center { flex: 1; padding: 0; }
+    .search-box { display: none; }
+</style>
+@endpush
 
-        <main class="main-content" style="padding: 25px;">
-            <div class="content-body">
-                <div class="page-title-banner" style="background-color: #1a5c7a; color: white; padding: 15px; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px;">
-                    Generate Laporan
-                </div>
-                
-                <div class="form-container">
-                    <div class="section-badge">Form Laporan</div>
-                    
-                    <div class="form-row-custom">
-                        <label class="label-custom">Email Donatur</label>
-                        <div class="input-area"><input type="email" class="input-text-custom" v-model="emailDonatur" placeholder="Contoh: donatur@email.com"></div>
-                    </div>
-                    <div class="form-row-custom">
-                        <label class="label-custom">Isi Laporan</label>
-                        <div class="input-area"><textarea class="textarea-custom" v-model="isiLaporan"></textarea></div>
-                    </div>
-                    <div class="form-row-custom">
-                        <label class="label-custom">Upload Bukti Terima Donasi</label>
-                        <div class="input-area upload-wrapper">
-                            <div class="photo-box" @click="$refs.fileInput.click()">
-                                <img v-if="previewImage" :src="previewImage" class="photo-preview">
-                                <i v-else class="fas fa-camera camera-icon"></i>
-                            </div>
-                            <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none;" accept="image/*">
-                            <div class="file-input-row">
-                                <button class="btn-choose" @click="$refs.fileInput.click()">Choose File</button>
-                                <span class="file-status">@{{ fileName || 'No File Chosen' }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-end mt-5">
-                        <button @click="generateAndSendPDF" class="btn-kirim">
-                            <i class="fas fa-paper-plane me-2"></i> Kirim & Generate PDF
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </main>
+@section('content')
+<div class="page-title-banner" style="background-color: #1a5c7a; color: white; padding: 15px; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px;">
+    Generate Laporan
+</div>
+
+<div class="form-container">
+    <div class="section-badge">Form Laporan</div>
+    
+    <div class="form-row-custom">
+        <label class="label-custom">Email Donatur</label>
+        <div class="input-area">
+            <input type="email" class="input-text-custom" v-model="emailDonatur" placeholder="Contoh: donatur@email.com">
+        </div>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ asset('assets/js/main-admin.js') }}"></script>
-    <script src="{{ asset('assets/js/generate-laporan.js') }}"></script>
-</body>
-</html>
+    <div class="form-row-custom">
+        <label class="label-custom">Isi Laporan</label>
+        <div class="input-area">
+            <textarea class="textarea-custom" v-model="isiLaporan"></textarea>
+        </div>
+    </div>
+    
+    <div class="form-row-custom">
+        <label class="label-custom">Upload Bukti Terima Donasi</label>
+        <div class="input-area upload-wrapper">
+            <div class="photo-box" @click="$refs.fileInput.click()">
+                <img v-if="previewImage" :src="previewImage" class="photo-preview">
+                <i v-else class="fas fa-camera camera-icon"></i>
+            </div>
+            <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none;" accept="image/*">
+            <div class="file-input-row">
+                <button class="btn-choose" @click="$refs.fileInput.click()">Choose File</button>
+                <span class="file-status">@{{ fileName || 'No File Chosen' }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-end mt-5">
+        <button @click="generateAndSendPDF" class="btn-kirim">
+            <i class="fas fa-paper-plane me-2"></i> Kirim & Generate PDF
+        </button>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="{{ asset('assets/js/generate-laporan.js') }}"></script>
+@endpush

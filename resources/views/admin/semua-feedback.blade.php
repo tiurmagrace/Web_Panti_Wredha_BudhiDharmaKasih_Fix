@@ -1,150 +1,78 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semua Pesan Masuk - Panti Wredha BDK</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    
-    <link rel="stylesheet" href="{{ asset('assets/css/style-admin.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/semua-feedback.css') }}">
-    
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
-<body class="bg-admin">
-    <div id="feedbackApp" class="admin-wrapper" v-cloak>
-        
-        <header class="top-header">
-            <div class="header-left">
-                <a href="{{ url('/admin') }}" style="text-decoration: none;">
-                    <img src="{{ asset('assets/images/1.png') }}" alt="Logo BDK" class="header-logo">
-                </a>
-            </div>
 
-            <div class="header-center">
-                <div class="search-box">
-                    <input type="text" v-model="searchQuery" placeholder="Cari nama atau isi pesan..." name="search">
-                    <i class="fas fa-search"></i>
-                </div>
-            </div>
 
-            <div class="header-right">
-                <a href="{{ url('/admin/notifikasi') }}" class="text-white text-decoration-none me-3 position-relative">
-                    <i class="far fa-bell icon-bell"></i>
-                    <span v-if="unreadCount > 0" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="font-size: 0.6rem;">
-                        </span>
-                </a>
-                <span class="user-text me-3">Hai, ADMIN!</span>
-                <i class="fas fa-user-circle icon-profile"></i>
-            </div>
-        </header>
 
-        <aside class="sidebar">
-            <ul class="list-unstyled">
-                <li><a href="{{ url('/admin') }}"><i class="fas fa-folder"></i> Dashboard</a></li>
-                <li>
-                    <a href="#penghuniSub" data-bs-toggle="collapse" class="dropdown-toggle">
-                        <i class="fas fa-file-invoice"></i> Manajemen Data Penghuni
-                    </a>
-                    <ul class="collapse list-unstyled sidebar-submenu" id="penghuniSub">
-                        <li><a href="{{ url('/admin/kelola-penghuni') }}"><i class="fas fa-list"></i> Data Penghuni</a></li>
-                        <li><a href="{{ url('/admin/tambah-penghuni') }}"><i class="fas fa-plus"></i> Tambah Data</a></li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="#donasiSub" data-bs-toggle="collapse" class="dropdown-toggle">
-                        <i class="fas fa-box-open"></i> Manajemen Distribusi Donasi
-                    </a>
-                    <ul class="collapse list-unstyled sidebar-submenu" id="donasiSub">
-                        <li><a href="{{ url('/admin/kelola-donasi') }}"><i class="fas fa-history"></i> Riwayat</a></li>
-                        <li><a href="{{ url('/admin/tambah-donasi') }}"><i class="fas fa-plus"></i> Tambah Donasi</a></li>
-                        <li><a href="{{ url('/admin/laporan-donasi') }}"><i class="fas fa-file-alt"></i> Laporan</a></li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="#barangSub" data-bs-toggle="collapse" class="dropdown-toggle">
-                        <i class="fas fa-boxes"></i> Manajemen Stok Barang
-                    </a>
-                    <ul class="collapse list-unstyled sidebar-submenu" id="barangSub">
-                        <li><a href="{{ url('/admin/data-barang') }}"><i class="fas fa-clipboard-list"></i> Data Stok Barang</a></li>
-                        <li><a href="{{ url('/admin/tambah-barang') }}"><i class="fas fa-plus"></i> Tambah Stok Barang</a></li>
-                        <li><a href="{{ url('/admin/ambil-stok') }}"><i class="fas fa-minus-square"></i> Ambil Stok Barang</a></li>
-                    </ul>
-                </li>
-            </ul>
-            <div class="logout-wrapper">
-                <a href="javascript:void(0)" @click="logoutAdmin" class="text-white text-decoration-none d-flex align-items-center gap-2">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </div> 
-        </aside>
 
-        <main class="main-content" style="padding: 25px;">
-            <div class="content-body">
-                <div class="page-title-banner" style="margin-bottom: 25px;">Kotak Masuk Pesan & Feedback</div>
-                
-                <div class="glass-panel">
-                    
-                    <div class="row mb-4 align-items-end g-2">
-                        <div class="col-md-3">
-                            <label class="filter-label">Filter Bulan</label>
-                            <select v-model="filterBulan" class="form-select form-select-sm">
-                                <option value="">Semua Bulan</option>
-                                <option value="01">Januari</option><option value="02">Februari</option><option value="03">Maret</option>
-                                <option value="04">April</option><option value="05">Mei</option><option value="06">Juni</option>
-                                <option value="07">Juli</option><option value="08">Agustus</option><option value="09">September</option>
-                                <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="filter-label">Filter Tahun</label>
-                            <select v-model="filterTahun" class="form-select form-select-sm">
-                                <option value="">Semua Tahun</option>
-                                <option value="2024">2024</option>
-                                <option value="2025">2025</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button v-if="filterBulan || filterTahun" @click="resetFilter" class="btn btn-danger btn-sm w-100" style="height: 31px;">
-                                <i class="fas fa-times"></i> Reset
-                            </button>
-                        </div>
-                    </div>
-                    <hr style="border-top: 1px solid #eee;">
 
-                    <div v-if="filteredList.length === 0" class="text-center py-5 text-muted">
-                        <i class="far fa-envelope-open fa-3x mb-3" style="opacity: 0.3;"></i>
-                        <br>
-                        Tidak ada pesan yang cocok dengan filter/pencarian.
-                    </div>
-                    
-                    <div v-else>
-                        <div v-for="(msg, index) in filteredList" :key="index" class="msg-item">
-                            <div class="msg-header d-flex justify-content-between align-items-center">
-                                <span class="sender-name">
-                                    <i class="fas fa-user-circle me-2" style="font-size: 1.2rem;"></i> @{{ msg.nama }}
-                                </span>
-                                <span class="msg-time">
-                                    <i class="far fa-calendar-alt me-1"></i> @{{ msg.tanggal }} &nbsp; 
-                                    <i class="far fa-clock me-1"></i> @{{ msg.jam || '10:00' }}
-                                </span>
-                            </div>
-                            <div class="msg-body">
-                                <i class="fas fa-quote-left me-2 text-muted" style="font-size: 0.8rem;"></i>
-                                @{{ msg.pesan }}
-                            </div>
-                        </div>
-                    </div>
+{{-- ==========================================
+     3. semua-feedback.blade.php
+     ========================================== --}}
+@extends('layouts.admin')
 
-                </div>
-            </div>
-        </main>
+@section('title', 'Kotak Masuk Pesan & Feedback')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/semua-feedback.css') }}">
+@endpush
+
+@section('content')
+<div class="page-title-banner" style="margin-bottom: 25px;">
+    Kotak Masuk Pesan & Feedback
+</div>
+
+<div class="glass-panel">
+    <div class="row mb-4 align-items-end g-2">
+        <div class="col-md-3">
+            <label class="filter-label">Filter Bulan</label>
+            <select v-model="filterBulan" class="form-select form-select-sm">
+                <option value="">Semua Bulan</option>
+                <option value="01">Januari</option><option value="02">Februari</option><option value="03">Maret</option>
+                <option value="04">April</option><option value="05">Mei</option><option value="06">Juni</option>
+                <option value="07">Juli</option><option value="08">Agustus</option><option value="09">September</option>
+                <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="filter-label">Filter Tahun</label>
+            <select v-model="filterTahun" class="form-select form-select-sm">
+                <option value="">Semua Tahun</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button v-if="filterBulan || filterTahun" @click="resetFilter" class="btn btn-danger btn-sm w-100" style="height: 31px;">
+                <i class="fas fa-times"></i> Reset
+            </button>
+        </div>
     </div>
+    <hr style="border-top: 1px solid #eee;">
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ asset('assets/js/semua-feedback.js') }}"></script>
-</body>
-</html>
+    <div v-if="filteredList.length === 0" class="text-center py-5 text-muted">
+        <i class="far fa-envelope-open fa-3x mb-3" style="opacity: 0.3;"></i>
+        <br>
+        Tidak ada pesan yang cocok dengan filter/pencarian.
+    </div>
+    
+    <div v-else>
+        <div v-for="(msg, index) in filteredList" :key="index" class="msg-item">
+            <div class="msg-header d-flex justify-content-between align-items-center">
+                <span class="sender-name">
+                    <i class="fas fa-user-circle me-2" style="font-size: 1.2rem;"></i> @{{ msg.nama }}
+                </span>
+                <span class="msg-time">
+                    <i class="far fa-calendar-alt me-1"></i> @{{ msg.tanggal }} &nbsp; 
+                    <i class="far fa-clock me-1"></i> @{{ msg.jam || '10:00' }}
+                </span>
+            </div>
+            <div class="msg-body">
+                <i class="fas fa-quote-left me-2 text-muted" style="font-size: 0.8rem;"></i>
+                @{{ msg.pesan }}
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script src="{{ asset('assets/js/semua-feedback.js') }}"></script>
+@endpush

@@ -1,10 +1,10 @@
 /* ========================================
-   KELOLA PENGHUNI - JAVASCRIPT LOGIC
+   KELOLA PENGHUNI - JAVASCRIPT LOGIC (LARAVEL VERSION)
    ======================================== */
 
 // Security Check - Redirect ke login jika belum login
 if (!localStorage.getItem('adminLoggedIn')) {
-    window.location.href = 'auth/login.html';
+    window.location.href = '/admin/login';
 }
 
 // Inisialisasi Vue App
@@ -27,62 +27,11 @@ createApp({
             filterPaviliun: '',
             filterTahun: '',
             
-            // DUMMY DATA
-            penghuniList: [
-                { 
-                    nik: '1234567890123456', 
-                    nama: 'tino prasetyo', 
-                    ttl: 'majenang, 25/05/1957', 
-                    usia: 67, 
-                    kota: 'purwokerto', 
-                    tahun: '2024', 
-                    paviliun: 'bougenville 1', 
-                    agama: 'katolik', 
-                    alamat: 'jl. kenanga no. 3', 
-                    gender: 'pria', 
-                    status: 'duda', 
-                    pj: 'budi (anak)', 
-                    hubungan: 'anak', 
-                    telp: '08123456789', 
-                    alamat_pj: 'jakarta', 
-                    penyakit: 'stroke ringan', 
-                    alergi: 'ayam', 
-                    kebutuhan: 'walker', 
-                    obat: 'simvastatin', 
-                    status_sehat: 'stabil', 
-                    tgl_masuk: '2024-01-01', 
-                    rujukan: 'keluarga', 
-                    catatan: '-', 
-                    foto: null 
-                },
-                { 
-                    nik: '3302055505570001', 
-                    nama: 'arifin', 
-                    ttl: 'majenang, 25/05/1957', 
-                    usia: 67, 
-                    kota: 'purwokerto', 
-                    tahun: '2024', 
-                    paviliun: 'bougenville 1', 
-                    agama: 'islam', 
-                    alamat: 'jl. merdeka no. 1', 
-                    gender: 'pria', 
-                    status: 'menikah', 
-                    pj: 'siti (istri)', 
-                    hubungan: 'istri', 
-                    telp: '0812999999', 
-                    alamat_pj: 'purwokerto', 
-                    penyakit: 'diabetes', 
-                    alergi: '-', 
-                    kebutuhan: '-', 
-                    obat: 'metformin', 
-                    status_sehat: 'perlu kontrol', 
-                    tgl_masuk: '2024-02-15', 
-                    rujukan: 'dinas sosial', 
-                    catatan: '-', 
-                    foto: null 
-                },
-            ],
+            // DATA PENGHUNI - akan diload dari localStorage
+            penghuniList: [],
+            
             currentUrl: window.location.href,
+            activePage: 'penghuni',  // ✅ Ganti nama biar ga collision
             unreadCount: 0
         }
     },
@@ -90,8 +39,8 @@ createApp({
     computed: {
         // Ambil tahun unik untuk dropdown
         uniqueYears() {
-            if (!this.penghuniList) return [];
-            const years = this.penghuniList.map(item => item.tahun);
+            if (!this.penghuniList || this.penghuniList.length === 0) return [];
+            const years = this.penghuniList.map(item => item.tahun).filter(Boolean);
             return [...new Set(years)].sort((a, b) => b - a);
         },
 
@@ -137,23 +86,105 @@ createApp({
     },
 
     mounted() {
+        console.log('✅ Vue Kelola Penghuni Mounted!');
+        
+        // Load data dari localStorage PERTAMA KALI
+        this.loadDataPenghuni();
+        
         // Check URL params untuk alert sukses
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.get('status') === 'success') {
             this.alertStatus = 'success';
+            
+            // RELOAD data sekali lagi untuk memastikan data terbaru muncul
+            setTimeout(() => {
+                this.loadDataPenghuni();
+                
+                // Tampilkan SweetAlert
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Data Berhasil Ditambahkan!',
+                    text: 'Penghuni baru telah ditambahkan ke dalam sistem.',
+                    confirmButtonColor: '#21698a',
+                    timer: 3000
+                });
+            }, 100);
+            
+            // Hapus parameter dari URL
             window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        
-        // Load data dari localStorage
-        const dataBaru = JSON.parse(localStorage.getItem('penghuniBaru'));
-        if (dataBaru && Array.isArray(dataBaru) && dataBaru.length > 0) {
-            this.penghuniList = dataBaru;
-        } else {
-            localStorage.setItem('penghuniBaru', JSON.stringify(this.penghuniList));
         }
     },
 
     methods: {
+        // Method untuk load data dari localStorage
+        loadDataPenghuni() {
+            const dataBaru = JSON.parse(localStorage.getItem('penghuniBaru'));
+            
+            if (dataBaru && Array.isArray(dataBaru) && dataBaru.length > 0) {
+                this.penghuniList = dataBaru;
+                console.log('📦 Data loaded:', dataBaru.length, 'penghuni');
+                console.log('📋 Latest data:', dataBaru[dataBaru.length - 1].nama);
+            } else {
+                // Jika belum ada data, gunakan dummy data
+                this.penghuniList = [
+                    { 
+                        nik: '1234567890123456', 
+                        nama: 'tino prasetyo', 
+                        ttl: 'majenang, 25/05/1957', 
+                        usia: 67, 
+                        kota: 'purwokerto', 
+                        tahun: '2024', 
+                        paviliun: 'bougenville 1', 
+                        agama: 'katolik', 
+                        alamat: 'jl. kenanga no. 3', 
+                        gender: 'pria', 
+                        status: 'duda', 
+                        pj: 'budi (anak)', 
+                        hubungan: 'anak', 
+                        telp: '08123456789', 
+                        alamat_pj: 'jakarta', 
+                        penyakit: 'stroke ringan', 
+                        alergi: 'ayam', 
+                        kebutuhan: 'walker', 
+                        obat: 'simvastatin', 
+                        status_sehat: 'stabil', 
+                        tgl_masuk: '2024-01-01', 
+                        rujukan: 'keluarga', 
+                        catatan: '-', 
+                        foto: null 
+                    },
+                    { 
+                        nik: '3302055505570001', 
+                        nama: 'arifin', 
+                        ttl: 'majenang, 25/05/1957', 
+                        usia: 67, 
+                        kota: 'purwokerto', 
+                        tahun: '2024', 
+                        paviliun: 'bougenville 1', 
+                        agama: 'islam', 
+                        alamat: 'jl. merdeka no. 1', 
+                        gender: 'pria', 
+                        status: 'menikah', 
+                        pj: 'siti (istri)', 
+                        hubungan: 'istri', 
+                        telp: '0812999999', 
+                        alamat_pj: 'purwokerto', 
+                        penyakit: 'diabetes', 
+                        alergi: '-', 
+                        kebutuhan: '-', 
+                        obat: 'metformin', 
+                        status_sehat: 'perlu kontrol', 
+                        tgl_masuk: '2024-02-15', 
+                        rujukan: 'dinas sosial', 
+                        catatan: '-', 
+                        foto: null 
+                    }
+                ];
+                localStorage.setItem('penghuniBaru', JSON.stringify(this.penghuniList));
+                console.log('💾 Dummy data saved to localStorage');
+            }
+        },
+        
         // Format text helper functions
         formatUpperCase(str) { 
             return str ? String(str).toUpperCase() : '-'; 
@@ -252,9 +283,9 @@ createApp({
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
-                    window.location.href = 'auth/login.html';
+                    window.location.href = '/admin/login';
                 }
             });
         }
     }
-}).mount('#penghuniApp');
+}).mount('#adminApp');

@@ -1,6 +1,10 @@
-// --- SECURITY CHECK (SATPAM) ---
+// ==========================================
+// 3. ambil-stok.js - FIXED MOUNTING
+// ==========================================
+// File: public/assets/js/ambil-stok.js
+
 if (!localStorage.getItem('adminLoggedIn')) {
-    window.location.href = 'auth/login.html';
+    window.location.href = '/admin/login';
 }
 
 const { createApp } = window.Vue;
@@ -8,19 +12,12 @@ const { createApp } = window.Vue;
 createApp({
     data() {
         return {
-            unreadCount: 0,
-            selectedNamaBarang: '', 
-            stokTersediaDisplay: '', 
-            satuanBarang: '', 
-            stokAngka: 0,
-            barangList: [], 
-            form: { jumlah: '', tanggal: '', keperluan: '', petugas: '' },
-            currentUrl: window.location.href 
+            selectedNamaBarang: '', stokTersediaDisplay: '', satuanBarang: '', stokAngka: 0,
+            barangList: [], searchQuery: '', currentPage: 'barang', unreadCount: 0, currentUrl: window.location.href,
+            form: { jumlah: '', tanggal: '', keperluan: '', petugas: '' }
         }
     },
-    
     computed: {
-        // FILTER PINTAR: Cuma tampilkan barang yang stoknya ADA (Lebih dari 0)
         availableItems() {
             return this.barangList.filter(item => {
                 let sisa = 0;
@@ -28,26 +25,21 @@ createApp({
                     let match = item.sisa_stok.toString().match(/(\d+)/);
                     if(match) sisa = parseInt(match[0]);
                 }
-                // Return TRUE (tampilkan) kalau sisa > 0
                 return sisa > 0;
             });
         }
     },
-    
     mounted() {
         const data = JSON.parse(localStorage.getItem('barangList'));
         if (data && data.length > 0) {
             this.barangList = data;
         } else {
-            // Dummy Data
             this.barangList = [
-                { nama: 'Pampers uk. M', sisa_stok: '3 pack', tgl_masuk: '15/05/2025', expired: '-' },
-                { nama: 'Contoh Barang Habis', sisa_stok: '0 pack', tgl_masuk: '15/05/2025', expired: '-' } 
+                { nama: 'Pampers uk. M', sisa_stok: '3 pack', tgl_masuk: '15/05/2025', expired: '-' }
             ];
             localStorage.setItem('barangList', JSON.stringify(this.barangList));
         }
     },
-
     methods: {
         cekStok() {
             const item = this.barangList.find(i => i.nama === this.selectedNamaBarang);
@@ -67,60 +59,54 @@ createApp({
                 this.satuanBarang = '';
             }
         },
-        
         submitAmbil() {
             if (!this.selectedNamaBarang || !this.form.jumlah || !this.form.tanggal) {
-                Swal.fire('Error', 'Lengkapi semua data!', 'error'); return;
+                Swal.fire('Error', 'Lengkapi semua data!', 'error'); 
+                return;
             }
             if (parseInt(this.form.jumlah) > this.stokAngka) {
-                Swal.fire('Stok Kurang!', `Hanya tersedia ${this.stokAngka} ${this.satuanBarang}`, 'error'); return;
+                Swal.fire('Stok Kurang!', `Hanya tersedia ${this.stokAngka} ${this.satuanBarang}`, 'error'); 
+                return;
             }
-
             Swal.fire({
-                title: 'Keluarkan Barang?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya', confirmButtonColor: '#21698a'
+                title: 'Keluarkan Barang?', icon: 'warning', showCancelButton: true,
+                confirmButtonText: 'Ya', confirmButtonColor: '#21698a'
             }).then((r) => {
                 if(r.isConfirmed) {
                     const index = this.barangList.findIndex(i => i.nama === this.selectedNamaBarang);
                     if(index !== -1) {
                         let sisaBaru = this.stokAngka - parseInt(this.form.jumlah);
                         let formatSisa = `${sisaBaru} ${this.satuanBarang}`.trim();
-                        
                         this.barangList[index].sisa_stok = formatSisa;
-                        
                         let d = new Date(this.form.tanggal);
                         let tglKeluar = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
                         this.barangList[index].tgl_keluar = tglKeluar;
                         this.barangList[index].brg_keluar = `${this.form.jumlah} ${this.satuanBarang}`;
-
                         localStorage.setItem('barangList', JSON.stringify(this.barangList));
-
                         let logs = JSON.parse(localStorage.getItem('activityLog')) || [];
-                        
                         logs.push({ 
                             text: `Admin mengeluarkan stok: ${this.selectedNamaBarang} (${this.form.jumlah} ${this.satuanBarang}) - ${this.form.keperluan}`, 
                             time: new Date() 
                         });
                         localStorage.setItem('activityLog', JSON.stringify(logs));
-
                         Swal.fire('Berhasil!', 'Barang berhasil dikeluarkan.', 'success').then(() => {
-                            window.location.href = 'data-barang.html';
+                            window.location.href = '/admin/data-barang';
                         });
                     }
                 }
             });
         },
-        
         logoutAdmin() {
             Swal.fire({
                 title: 'Keluar?', text: "Sesi admin akan diakhiri.", icon: 'warning',
                 showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Logout'
+                confirmButtonText: 'Ya, Logout', cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    localStorage.removeItem('adminLoggedIn'); 
-                    window.location.href = 'auth/login.html'; 
+                    localStorage.removeItem('adminLoggedIn');
+                    window.location.href = '/admin/login';
                 }
             });
         }
     }
-}).mount('#ambilStokApp');
+}).mount('#adminApp');

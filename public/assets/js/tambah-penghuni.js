@@ -1,10 +1,10 @@
 /* ========================================
-   TAMBAH PENGHUNI - JAVASCRIPT LOGIC
+   TAMBAH PENGHUNI - JAVASCRIPT LOGIC (LARAVEL VERSION)
    ======================================== */
 
 // Security Check - Redirect ke login jika belum login
 if (!localStorage.getItem('adminLoggedIn')) {
-    window.location.href = '/auth/login';
+    window.location.href = '/admin/login';
 }
 
 // Inisialisasi Vue App
@@ -16,6 +16,9 @@ createApp({
             step: 1,
             previewImage: null,
             unreadCount: 0,
+            activePage: 'penghuni',  // ✅ Fixed: ganti dari currentPage
+            searchQuery: '', // Required by header
+            currentUrl: window.location.href,
             form: {
                 nama: '', 
                 nik: '', 
@@ -45,15 +48,23 @@ createApp({
         }
     },
     
+    mounted() {
+        console.log('✅ Vue Tambah Penghuni Mounted!');
+    },
+    
     methods: {
+        // Next Step
         nextStep() { 
-            this.step++; 
+            this.step++;
+            console.log('📋 Move to step:', this.step);
         },
         
+        // Filter hanya angka untuk NIK dan Telepon
         filterAngka(field) {
             this.form[field] = this.form[field].replace(/[^0-9]/g, '');
         },
 
+        // Handle upload foto
         handleFileUpload(event) {
             const file = event.target.files[0];
             if (file) {
@@ -61,24 +72,30 @@ createApp({
                 reader.onload = (e) => {
                     this.previewImage = e.target.result;
                     this.form.foto = e.target.result;
+                    console.log('📸 Foto uploaded');
                 };
                 reader.readAsDataURL(file);
             }
         },
 
+        // Validasi dan Submit
         validateAndSubmit() {
             let errorMsg = '';
 
+            // Validasi field wajib
             if (!this.form.nama || !this.form.kota || !this.form.tgl_masuk || !this.form.paviliun) {
                 errorMsg = "Data Wajib (Nama, Kota, Tgl Masuk, Paviliun) Belum Lengkap!";
             } 
+            // Validasi NIK
             else if (!this.form.nik || this.form.nik.length !== 16) {
                 errorMsg = "Format NIK Salah! Harus 16 digit angka.";
             }
+            // Validasi Telepon
             else if (!this.form.telp || this.form.telp.length < 10) {
                 errorMsg = "Nomor Telepon tidak valid (minimal 10 angka).";
             }
 
+            // Tampilkan error jika ada
             if (errorMsg) {
                 Swal.fire({
                     icon: 'error',
@@ -89,10 +106,12 @@ createApp({
                 return;
             }
 
-            if (this.form.tgl_masuk) {
+            // Extract tahun dari tanggal masuk
+            if(this.form.tgl_masuk) {
                 this.form.tahun = this.form.tgl_masuk.split('-')[0];
             }
 
+            // Konfirmasi sebelum submit
             Swal.fire({
                 title: 'Apakah Yakin <span style="color:#2ecc71">Menambah</span> Data',
                 icon: false, 
@@ -102,15 +121,26 @@ createApp({
                 confirmButtonColor: '#1a5c7a', 
                 cancelButtonColor: '#1a5c7a', 
                 background: '#1a5c7a', 
-                color: 'white'
+                color: 'white',
+                customClass: { 
+                    popup: 'border-radius-10', 
+                    title: 'text-white fw-bold fs-5', 
+                    confirmButton: 'px-4', 
+                    cancelButton: 'px-4' 
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
-
+                    // Simpan data ke localStorage
                     let dataLama = JSON.parse(localStorage.getItem('penghuniBaru')) || [];
                     dataLama.push(this.form);
                     localStorage.setItem('penghuniBaru', JSON.stringify(dataLama));
+                    
+                    console.log('💾 Data saved! Total penghuni:', dataLama.length);
 
+                    // Simpan log aktivitas
                     let logs = JSON.parse(localStorage.getItem('activityLog')) || [];
+                    
+                    // Format waktu untuk log
                     let jam = new Date().toLocaleString('id-ID', { 
                         day: 'numeric', 
                         month: 'short', 
@@ -125,13 +155,16 @@ createApp({
                     });
                     
                     localStorage.setItem('activityLog', JSON.stringify(logs));
-
-                    // ✅ REDIRECT KE ROUTE LARAVEL (BUKAN .html)
+                    console.log('📝 Activity log saved');
+                    
+                    // Redirect ke halaman kelola penghuni dengan parameter success
+                    console.log('🔄 Redirecting to kelola-penghuni...');
                     window.location.href = '/admin/kelola-penghuni?status=success';
                 }
             });
         },
 
+        // Logout Admin
         logoutAdmin() {
             Swal.fire({
                 title: 'Keluar?', 
@@ -145,10 +178,9 @@ createApp({
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
-                    // ✅ ROUTE LOGIN LARAVEL
-                    window.location.href = '/auth/login';
+                    window.location.href = '/admin/login';
                 }
             });
         }
     }
-}).mount('#tambahApp');
+}).mount('#adminApp');

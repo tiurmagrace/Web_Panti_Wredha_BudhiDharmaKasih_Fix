@@ -1,76 +1,34 @@
-/* ========================================
-   EDIT DONASI - JAVASCRIPT LOGIC
-   ======================================== */
+// ==========================================
+// 1. edit-donasi.js - FIXED
+// ==========================================
+// File: public/assets/js/edit-donasi.js
 
-// Security Check - Redirect ke login jika belum login
 if (!localStorage.getItem('adminLoggedIn')) {
-    window.location.href = 'auth/login.html';
+    window.location.href = '/admin/login';
 }
 
-// Logout Function (Global)
-function logoutAdmin() {
-    Swal.fire({
-        title: 'Keluar?', 
-        text: "Sesi admin akan diakhiri.", 
-        icon: 'warning',
-        showCancelButton: true, 
-        confirmButtonColor: '#d33', 
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Ya, Logout',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.removeItem('adminLoggedIn');
-            window.location.href = 'auth/login.html';
-        }
-    });
-}
-
-// Inisialisasi Vue App
 const { createApp } = window.Vue;
 
 createApp({
     data() {
         return {
-            searchQuery: '',
-            form: {},
-            editIndex: -1,
-            previewImage: null,
-            unreadCount: 0,
-            currentUrl: window.location.href
+            searchQuery: '', form: {}, editIndex: -1, previewImage: null,
+            unreadCount: 0, currentUrl: window.location.href, currentPage: 'donasi'
         }
     },
-    
-    watch: { 
-        // Kosongkan detail ketika jenis diganti
-        'form.jenis'(newValue) {
-            this.form.detail = '';
-        }
-    },
-    
+    watch: { 'form.jenis'(newValue) { this.form.detail = ''; } },
     mounted() {
-        // Ambil data yang mau diedit dari localStorage
         const editData = JSON.parse(localStorage.getItem('editDonasiData'));
-        
         if (editData) {
             this.form = editData.data;
             this.editIndex = editData.index;
-            
-            // Kalau ada foto di data, tampilkan
-            if (this.form.foto) {
-                this.previewImage = this.form.foto;
-            } else {
-                // Kalau ga ada foto, set null (akan tampil placeholder)
-                this.previewImage = null;
-            }
+            if (this.form.foto) this.previewImage = this.form.foto;
+            else this.previewImage = null;
         } else {
-            // Kalau tidak ada data edit, redirect ke halaman kelola
-            window.location.href = 'kelola-donasi.html';
+            window.location.href = '/admin/kelola-donasi';
         }
     },
-    
     methods: {
-        // Handle upload foto baru
         handleFileUpload(event) {
             const file = event.target.files[0];
             if (file) {
@@ -82,24 +40,15 @@ createApp({
                 reader.readAsDataURL(file);
             }
         },
-        
-        // Validasi dan simpan perubahan
         validateAndSave() {
             Swal.fire({
-                title: 'Simpan Perubahan?', 
-                icon: 'question', 
-                showCancelButton: true,
-                confirmButtonText: 'Ya', 
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#1a5c7a', 
-                cancelButtonColor: '#d33'
+                title: 'Simpan Perubahan?', icon: 'question', showCancelButton: true,
+                confirmButtonText: 'Ya', cancelButtonText: 'Batal',
+                confirmButtonColor: '#1a5c7a', cancelButtonColor: '#d33'
             }).then((result) => {
                 if (result.isConfirmed) {
                     try {
-                        // 1. Update data utama
                         let mainData = JSON.parse(localStorage.getItem('donasiList'));
-                        
-                        // Format tanggal display (DD/MM/YYYY)
                         if(this.form.tanggal_raw) {
                             let d = new Date(this.form.tanggal_raw);
                             let day = String(d.getDate()).padStart(2, '0');
@@ -107,46 +56,40 @@ createApp({
                             let year = d.getFullYear();
                             this.form.tanggal = `${day}/${month}/${year}`;
                         }
-
-                        // Update data di localStorage
                         if(mainData && this.editIndex !== -1) {
                             mainData[this.editIndex] = this.form;
                             localStorage.setItem('donasiList', JSON.stringify(mainData));
                         }
-
-                        // 2. Catat log aktivitas
                         let logs = JSON.parse(localStorage.getItem('activityLog')) || [];
-                        
-                        // Format waktu untuk log
                         let jam = new Date().toLocaleString('id-ID', { 
-                            day: 'numeric', 
-                            month: 'short', 
-                            year: 'numeric', 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
+                            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
                         });
-
-                        logs.push({ 
-                            text: `Admin mengubah data donasi dari: ${this.form.donatur}`, 
-                            time: jam 
-                        });
-
+                        logs.push({ text: `Admin mengubah data donasi dari: ${this.form.donatur}`, time: jam });
                         localStorage.setItem('activityLog', JSON.stringify(logs));
-
-                        // 3. Hapus temp data dan redirect
                         localStorage.removeItem('editDonasiData');
-                        window.location.href = 'kelola-donasi.html?status=edited';
-                        
+                        window.location.href = '/admin/kelola-donasi?status=edited';
                     } catch (e) {
                         Swal.fire('Error', 'Gagal menyimpan (mungkin file foto terlalu besar)', 'error');
                     }
                 }
             });
         },
-        
-        // Logout
         logoutAdmin() {
-            logoutAdmin();
+            Swal.fire({
+                title: 'Keluar?', text: "Sesi admin akan diakhiri.", icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Logout', cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('adminLoggedIn');
+                    window.location.href = '/admin/login';
+                }
+            });
         }
     }
-}).mount('#editDonasiApp');
+}).mount('#adminApp');
+
+
+
+
+

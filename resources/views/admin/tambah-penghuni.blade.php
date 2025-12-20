@@ -1,324 +1,252 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Data Penghuni - Panti Wredha BDK</title>
+@extends('layouts.admin')
+
+@section('title', 'Tambah Data Penghuni')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/tambah-penghuni.css') }}">
+<style>
+    /* Override header center untuk halaman ini */
+    .header-center {
+        flex: 1;
+        padding: 0;
+    }
+    .search-box {
+        display: none; /* Sembunyikan search box di halaman ini */
+    }
+</style>
+@endpush
+
+@section('content')
+<div class="page-title-banner" style="background-color: #1a5c7a; color: white; padding: 15px; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px;">
+    Data Penghuni Baru
+</div>
+
+{{-- Progress Indicator --}}
+<div class="progress-indicator">
+    <div class="progress-step">
+        <div :class="['step-circle', { active: step === 1, completed: step > 1 }]">
+            <i v-if="step > 1" class="fas fa-check"></i>
+            <span v-else>1</span>
+        </div>
+        <span :class="['step-label', { active: step === 1 }]">Data Pribadi</span>
+    </div>
     
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <div :class="['step-divider', { completed: step > 1 }]"></div>
     
-    <link rel="stylesheet" href="{{ asset('assets/css/style-admin.css') }}"> 
-    <link rel="stylesheet" href="{{ asset('assets/css/tambah-penghuni.css') }}">
+    <div class="progress-step">
+        <div :class="['step-circle', { active: step === 2, completed: step > 2 }]">
+            <i v-if="step > 2" class="fas fa-check"></i>
+            <span v-else>2</span>
+        </div>
+        <span :class="['step-label', { active: step === 2 }]">Kontak & Kesehatan</span>
+    </div>
     
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
+    <div :class="['step-divider', { completed: step > 2 }]"></div>
+    
+    <div class="progress-step">
+        <div :class="['step-circle', { active: step === 3 }]">3</div>
+        <span :class="['step-label', { active: step === 3 }]">Data Panti</span>
+    </div>
+</div>
 
-<body class="bg-admin">
+{{-- Form Container --}}
+<div class="form-container">
+    
+    {{-- STEP 1: Data Pribadi --}}
+    <div v-show="step === 1">
+        <div class="section-header-teal">Data Pribadi</div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Nama Lengkap</label>
+            <input type="text" class="input-custom" v-model="form.nama">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">NIK</label>
+            <input type="text" class="input-custom" v-model="form.nik" @input="filterAngka('nik')" maxlength="16" placeholder="Harus 16 Digit Angka">
+        </div>
+        <span v-if="form.nik && form.nik.length < 16" class="error-text-small">* NIK belum 16 digit</span>
 
-    <div id="tambahApp" class="admin-wrapper" v-cloak>
-        <header class="top-header">
-            <div class="header-left">
-                <a href="{{ url('/admin') }}" style="text-decoration: none;">
-                    <img src="{{ asset('assets/images/1.png') }}" alt="Logo BDK" class="header-logo">
-                </a>
-            </div>
-
-            <div class="header-center-empty"></div>
-
-            <div class="header-right">
-                <a href="{{ url('/admin/notifikasi') }}" class="text-white text-decoration-none me-3 position-relative">
-                    <i class="far fa-bell icon-bell"></i>
-                    <span v-if="unreadCount > 0" 
-                        class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" 
-                        style="font-size: 0.6rem;">
-                        </span>
-                </a>
-                
-                <span class="user-text me-3">Hai, ADMIN!</span>
-                <i class="fas fa-user-circle icon-profile"></i>
-            </div>
-        </header>
-
-        <aside class="sidebar">
-            <ul class="list-unstyled">
-                <li>
-                    <a href="{{ url('/admin') }}">
-                        <i class="fas fa-folder"></i> Dashboard
-                    </a>
-                </li>
-                
-                <li>
-                    <a href="#penghuniSub" data-bs-toggle="collapse" class="dropdown-toggle" aria-expanded="true">
-                        <i class="fas fa-file-invoice"></i> Manajemen Data Penghuni
-                    </a>
-                    <ul class="collapse show list-unstyled sidebar-submenu" id="penghuniSub">
-                        <li><a href="{{ url('/admin/kelola-penghuni') }}"><i class="fas fa-list"></i> Data Penghuni</a></li>
-                        <li><a href="{{ url('/admin/tambah-penghuni') }}" class="active"><i class="fas fa-plus"></i> Tambah Data</a></li>
-                    </ul>
-                </li>
-
-                <li>
-                    <a href="#donasiSub" data-bs-toggle="collapse" class="dropdown-toggle">
-                        <i class="fas fa-box-open"></i> Manajemen Distribusi Donasi
-                    </a>
-                    <ul class="collapse list-unstyled sidebar-submenu" id="donasiSub">
-                        <li><a href="{{ url('/admin/kelola-donasi') }}"><i class="fas fa-history"></i> Riwayat</a></li>
-                        <li><a href="{{ url('/admin/tambah-donasi') }}"><i class="fas fa-plus"></i> Tambah Donasi</a></li>
-                        <li><a href="{{ url('/admin/laporan-donasi') }}"><i class="fas fa-file-alt"></i> Laporan</a></li>
-                    </ul>
-                </li>
-
-                <li>
-                    <a href="#barangSub" data-bs-toggle="collapse" class="dropdown-toggle">
-                        <i class="fas fa-boxes"></i> Manajemen Stok Barang
-                    </a>
-                    <ul class="collapse list-unstyled sidebar-submenu" id="barangSub">
-                        <li><a href="{{ url('/admin/data-barang') }}"><i class="fas fa-clipboard-list"></i> Data Stok Barang</a></li>
-                        <li><a href="{{ url('/admin/tambah-barang') }}"><i class="fas fa-plus"></i> Tambah Stok Barang</a></li>
-                        <li><a href="{{ url('/admin/ambil-stok') }}"><i class="fas fa-minus-square"></i> Ambil Stok Barang</a></li>
-                    </ul>
-                </li>
-            </ul>
-            
-            <div class="logout-wrapper">
-                <a href="javascript:void(0)" @click="logoutAdmin" class="text-white text-decoration-none d-flex align-items-center gap-2">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </div> 
-        </aside>
-
-        <main class="main-content" style="padding: 25px;">
-            <div class="content-body">
-                <div class="page-title-banner" style="background-color: #1a5c7a; color: white; padding: 15px; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px;">
-                    Data Penghuni Baru
-                </div>
-
-                <div class="progress-indicator">
-                    <div class="progress-step">
-                        <div :class="['step-circle', { active: step === 1, completed: step > 1 }]">
-                            <i v-if="step > 1" class="fas fa-check"></i>
-                            <span v-else>1</span>
-                        </div>
-                        <span :class="['step-label', { active: step === 1 }]">Data Pribadi</span>
-                    </div>
-                    
-                    <div :class="['step-divider', { completed: step > 1 }]"></div>
-                    
-                    <div class="progress-step">
-                        <div :class="['step-circle', { active: step === 2, completed: step > 2 }]">
-                            <i v-if="step > 2" class="fas fa-check"></i>
-                            <span v-else>2</span>
-                        </div>
-                        <span :class="['step-label', { active: step === 2 }]">Kontak & Kesehatan</span>
-                    </div>
-                    
-                    <div :class="['step-divider', { completed: step > 2 }]"></div>
-                    
-                    <div class="progress-step">
-                        <div :class="['step-circle', { active: step === 3 }]">3</div>
-                        <span :class="['step-label', { active: step === 3 }]">Data Panti</span>
-                    </div>
-                </div>
-
-                <div class="form-container">
-                    
-                    <div v-if="step === 1">
-                        <div class="section-header-teal">Data Pribadi</div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Nama Lengkap</label>
-                            <input type="text" class="input-custom" v-model="form.nama">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">NIK</label>
-                            <input type="text" class="input-custom" v-model="form.nik" @input="filterAngka('nik')" maxlength="16" placeholder="Harus 16 Digit Angka">
-                        </div>
-                        <span v-if="form.nik && form.nik.length < 16" class="error-text-small">* NIK belum 16 digit</span>
-
-                        <div class="form-group-row">
-                            <label class="label-custom">Tempat, Tanggal, Lahir</label>
-                            <input type="text" class="input-custom" v-model="form.ttl">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Usia</label>
-                            <input type="number" class="input-custom" v-model="form.usia">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Jenis Kelamin</label>
-                            <select class="input-custom" v-model="form.gender">
-                                <option value="" disabled selected>-- Pilih Jenis Kelamin --</option>
-                                <option>Pria</option>
-                                <option>Wanita</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Agama</label>
-                            <select class="input-custom" v-model="form.agama">
-                                <option value="" disabled selected>-- Pilih Agama --</option>
-                                <option>Kristen Protestan</option>
-                                <option>Katholik</option>
-                                <option>Islam</option>
-                                <option>Hindu</option>
-                                <option>Budha</option>
-                                <option>Konghucu</option>
-                                <option>Kepercayaan Terhadap Tuhan YME</option>
-                                <option>Tidak Beragama</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Status Perkawinan</label>
-                            <select class="input-custom" v-model="form.status">
-                                <option value="" disabled selected>-- Pilih Status Perkawinan --</option>
-                                <option>Belum Kawin</option>
-                                <option>Kawin</option>
-                                <option>Janda</option>
-                                <option>Duda</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Alamat Lengkap</label>
-                            <input type="text" class="input-custom" v-model="form.alamat">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Kota Asal</label>
-                            <input type="text" class="input-custom" v-model="form.kota">
-                        </div>
-                    </div>
-
-                    <div v-if="step === 2">
-                        <div class="section-header-teal">Kontak Darurat</div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Penanggung Jawab</label>
-                            <input type="text" class="input-custom" v-model="form.pj">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Hubungan</label>
-                            <input type="text" class="input-custom" v-model="form.hubungan">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Nomor Telepon</label>
-                            <input type="text" class="input-custom" v-model="form.telp" @input="filterAngka('telp')" placeholder="Hanya Angka">
-                        </div>
-
-                        <div class="form-group-row">
-                            <label class="label-custom">Alamat Kontak</label>
-                            <input type="text" class="input-custom" v-model="form.alamat_pj">
-                        </div>
-
-                        <div class="section-header-teal mt-4">Data Kesehatan</div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Riwayat Penyakit</label>
-                            <input type="text" class="input-custom" v-model="form.penyakit">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Kebutuhan Khusus</label>
-                            <input type="text" class="input-custom" v-model="form.kebutuhan">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Alergi</label>
-                            <input type="text" class="input-custom" v-model="form.alergi">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Obat</label>
-                            <input type="text" class="input-custom" v-model="form.obat">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Status Kesehatan</label>
-                            <input type="text" class="input-custom" v-model="form.status_sehat">
-                        </div>
-                    </div>
-
-                    <div v-if="step === 3">
-                        <div class="section-header-teal">Data Masuk Panti</div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Tanggal Masuk</label>
-                            <input type="date" class="input-custom" v-model="form.tgl_masuk">
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Sumber Rujukan</label>
-                            <select class="input-custom" v-model="form.rujukan">
-                                <option value="" disabled selected>-- Pilih Sumber Rujukan --</option>
-                                <option>Yang Bersangkutan Sendiri</option>
-                                <option>Kerabat/Tetangga</option>
-                                <option>Dinas Sosial</option>
-                                <option>Lembaga Kesehatan</option>
-                                <option>Komunitas sosial</option>
-                                <option>Pusat layanan terpadu</option>
-                                <option>Lembaga Keagamaan</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group-row">
-                            <label class="label-custom">Penempatan Paviliun</label>
-                            <select class="input-custom" v-model="form.paviliun">
-                                <option value="" disabled selected>-- Pilih Paviliun --</option>
-                                <option>ANGGREK</option>
-                                <option>BOUGENVILLE 1</option>
-                                <option>BOUGENVILLE 2</option>
-                                <option>MAWAR</option>
-                                <option>SNEEK</option>
-                                <option>BETHESDA</option>
-                                <option>DAHLIA</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group-row" style="align-items: flex-start;">
-                            <label class="label-custom" style="padding-top: 10px;">Upload Foto</label>
-                            <div>
-                                <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none;" accept="image/*">
-                                <div class="photo-upload-box" @click="$refs.fileInput.click()">
-                                    <img v-if="previewImage" :src="previewImage" class="photo-preview">
-                                    <i v-else class="fas fa-camera camera-icon"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group-row">
-                            <label class="label-custom">Catatan</label>
-                            <input type="text" class="input-custom" v-model="form.catatan">
-                        </div>
-                    </div>
-
-                    <div class="nav-buttons">
-                        <button v-if="step > 1" @click="step--" class="btn-nav-text">
-                            <i class="fas fa-chevron-left fa-lg"></i> Sebelumnya
-                        </button>
-                        <div v-if="step === 1" style="width: 20px;"></div>
-                        
-                        <button v-if="step < 3" @click="nextStep" class="btn-nav-text">
-                            Selanjutnya <i class="fas fa-chevron-right fa-lg"></i>
-                        </button>
-                        
-                        <button v-if="step === 3" @click="validateAndSubmit" class="btn-submit-custom">
-                            <i class="fas fa-check-circle"></i> Submit Data
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </main>
+        <div class="form-group-row">
+            <label class="label-custom">Tempat, Tanggal, Lahir</label>
+            <input type="text" class="input-custom" v-model="form.ttl">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Usia</label>
+            <input type="number" class="input-custom" v-model="form.usia">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Jenis Kelamin</label>
+            <select class="input-custom" v-model="form.gender">
+                <option value="" disabled selected>-- Pilih Jenis Kelamin --</option>
+                <option>Pria</option>
+                <option>Wanita</option>
+            </select>
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Agama</label>
+            <select class="input-custom" v-model="form.agama">
+                <option value="" disabled selected>-- Pilih Agama --</option>
+                <option>Kristen Protestan</option>
+                <option>Katholik</option>
+                <option>Islam</option>
+                <option>Hindu</option>
+                <option>Budha</option>
+                <option>Konghucu</option>
+                <option>Kepercayaan Terhadap Tuhan YME</option>
+                <option>Tidak Beragama</option>
+            </select>
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Status Perkawinan</label>
+            <select class="input-custom" v-model="form.status">
+                <option value="" disabled selected>-- Pilih Status Perkawinan --</option>
+                <option>Belum Kawin</option>
+                <option>Kawin</option>
+                <option>Janda</option>
+                <option>Duda</option>
+            </select>
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Alamat Lengkap</label>
+            <input type="text" class="input-custom" v-model="form.alamat">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Kota Asal</label>
+            <input type="text" class="input-custom" v-model="form.kota">
+        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ asset('assets/js/main-admin.js') }}"></script>
-    <script src="{{ asset('assets/js/tambah-penghuni.js') }}"></script>
-</body>
-</html>
+    {{-- STEP 2: Kontak & Kesehatan --}}
+    <div v-show="step === 2">
+        <div class="section-header-teal">Kontak Darurat</div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Penanggung Jawab</label>
+            <input type="text" class="input-custom" v-model="form.pj">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Hubungan</label>
+            <input type="text" class="input-custom" v-model="form.hubungan">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Nomor Telepon</label>
+            <input type="text" class="input-custom" v-model="form.telp" @input="filterAngka('telp')" placeholder="Hanya Angka">
+        </div>
+
+        <div class="form-group-row">
+            <label class="label-custom">Alamat Kontak</label>
+            <input type="text" class="input-custom" v-model="form.alamat_pj">
+        </div>
+
+        <div class="section-header-teal mt-4">Data Kesehatan</div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Riwayat Penyakit</label>
+            <input type="text" class="input-custom" v-model="form.penyakit">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Kebutuhan Khusus</label>
+            <input type="text" class="input-custom" v-model="form.kebutuhan">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Alergi</label>
+            <input type="text" class="input-custom" v-model="form.alergi">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Obat</label>
+            <input type="text" class="input-custom" v-model="form.obat">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Status Kesehatan</label>
+            <input type="text" class="input-custom" v-model="form.status_sehat">
+        </div>
+    </div>
+
+    {{-- STEP 3: Data Panti --}}
+    <div v-show="step === 3">
+        <div class="section-header-teal">Data Masuk Panti</div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Tanggal Masuk</label>
+            <input type="date" class="input-custom" v-model="form.tgl_masuk">
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Sumber Rujukan</label>
+            <select class="input-custom" v-model="form.rujukan">
+                <option value="" disabled selected>-- Pilih Sumber Rujukan --</option>
+                <option>Yang Bersangkutan Sendiri</option>
+                <option>Kerabat/Tetangga</option>
+                <option>Dinas Sosial</option>
+                <option>Lembaga Kesehatan</option>
+                <option>Komunitas sosial</option>
+                <option>Pusat layanan terpadu</option>
+                <option>Lembaga Keagamaan</option>
+            </select>
+        </div>
+        
+        <div class="form-group-row">
+            <label class="label-custom">Penempatan Paviliun</label>
+            <select class="input-custom" v-model="form.paviliun">
+                <option value="" disabled selected>-- Pilih Paviliun --</option>
+                <option>ANGGREK</option>
+                <option>BOUGENVILLE 1</option>
+                <option>BOUGENVILLE 2</option>
+                <option>MAWAR</option>
+                <option>SNEEK</option>
+                <option>BETHESDA</option>
+                <option>DAHLIA</option>
+            </select>
+        </div>
+        
+        <div class="form-group-row" style="align-items: flex-start;">
+            <label class="label-custom" style="padding-top: 10px;">Upload Foto</label>
+            <div>
+                <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none;" accept="image/*">
+                <div class="photo-upload-box" @click="$refs.fileInput.click()">
+                    <img v-if="previewImage" :src="previewImage" class="photo-preview">
+                    <i v-else class="fas fa-camera camera-icon"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group-row">
+            <label class="label-custom">Catatan</label>
+            <input type="text" class="input-custom" v-model="form.catatan">
+        </div>
+    </div>
+
+    {{-- Navigation Buttons --}}
+    <div class="nav-buttons">
+        <button v-if="step > 1" @click="step--" class="btn-nav-text">
+            <i class="fas fa-chevron-left fa-lg"></i> Sebelumnya
+        </button>
+        <div v-if="step === 1" style="width: 20px;"></div>
+        
+        <button v-if="step < 3" @click="nextStep" class="btn-nav-text">
+            Selanjutnya <i class="fas fa-chevron-right fa-lg"></i>
+        </button>
+        
+        <button v-if="step === 3" @click="validateAndSubmit" class="btn-submit-custom">
+            <i class="fas fa-check-circle"></i> Submit Data
+        </button>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script src="{{ asset('assets/js/tambah-penghuni.js') }}"></script>
+@endpush
