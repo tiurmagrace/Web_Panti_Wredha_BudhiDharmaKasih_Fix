@@ -2,18 +2,150 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PenghuniController;
+use App\Http\Controllers\Api\DonasiController;
+use App\Http\Controllers\Api\BarangController;
+use App\Http\Controllers\Api\FeedbackController;
+use App\Http\Controllers\Api\NotifikasiController;
+use App\Http\Controllers\Api\AktivitasLogController;
+use App\Http\Controllers\Api\LaporanDonasiController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| PUBLIC ROUTES (Tanpa Auth)
 |--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/verify-code', [AuthController::class, 'verifyCode']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+});
+
+// Feedback public (bisa dari guest)
+Route::post('/feedback', [FeedbackController::class, 'store']);
+
+/*
+|--------------------------------------------------------------------------
+| PROTECTED ROUTES (Perlu Auth)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:sanctum')->group(function () {
+    
+    // Auth
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/profile', [AuthController::class, 'profile']);
+
+    /*
+    |----------------------------------------------------------------------
+    | PENGHUNI ROUTES (Admin Only)
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('penghuni')->middleware('admin')->group(function () {
+        Route::get('/', [PenghuniController::class, 'index']);
+        Route::get('/statistics', [PenghuniController::class, 'statistics']);
+        Route::get('/{id}', [PenghuniController::class, 'show']);
+        Route::post('/', [PenghuniController::class, 'store']);
+        Route::put('/{id}', [PenghuniController::class, 'update']);
+        Route::delete('/{id}', [PenghuniController::class, 'destroy']);
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | DONASI ROUTES
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('donasi')->group(function () {
+        // Public untuk semua authenticated users
+        Route::get('/my-donations', [DonasiController::class, 'myDonations']);
+        Route::post('/', [DonasiController::class, 'store']);
+        
+        // Admin only
+        Route::middleware('admin')->group(function () {
+            Route::get('/', [DonasiController::class, 'index']);
+            Route::get('/statistics', [DonasiController::class, 'statistics']);
+            Route::get('/{id}', [DonasiController::class, 'show']);
+            Route::put('/{id}', [DonasiController::class, 'update']);
+            Route::delete('/{id}', [DonasiController::class, 'destroy']);
+        });
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | BARANG/STOK ROUTES (Admin Only)
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('barang')->middleware('admin')->group(function () {
+        Route::get('/', [BarangController::class, 'index']);
+        Route::get('/statistics', [BarangController::class, 'statistics']);
+        Route::get('/{id}', [BarangController::class, 'show']);
+        Route::post('/', [BarangController::class, 'store']);
+        Route::put('/{id}', [BarangController::class, 'update']);
+        Route::delete('/{id}', [BarangController::class, 'destroy']);
+        
+        // Pengambilan Stok
+        Route::post('/ambil-stok', [BarangController::class, 'ambilStok']);
+        Route::get('/riwayat-pengambilan/{barangId?}', [BarangController::class, 'riwayatPengambilan']);
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | FEEDBACK ROUTES
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('feedback')->middleware('admin')->group(function () {
+        Route::get('/', [FeedbackController::class, 'index']);
+        Route::patch('/{id}/mark-as-read', [FeedbackController::class, 'markAsRead']);
+        Route::delete('/{id}', [FeedbackController::class, 'destroy']);
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | NOTIFIKASI ROUTES
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('notifikasi')->group(function () {
+        Route::get('/', [NotifikasiController::class, 'index']);
+        Route::get('/unread-count', [NotifikasiController::class, 'unreadCount']);
+        Route::patch('/{id}/mark-as-read', [NotifikasiController::class, 'markAsRead']);
+        Route::patch('/mark-all-as-read', [NotifikasiController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotifikasiController::class, 'destroy']);
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | AKTIVITAS LOG ROUTES (Admin Only)
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('aktivitas-log')->middleware('admin')->group(function () {
+        Route::get('/', [AktivitasLogController::class, 'index']);
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | LAPORAN DONASI ROUTES (Admin Only)
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('laporan-donasi')->middleware('admin')->group(function () {
+        Route::get('/', [LaporanDonasiController::class, 'index']);
+        Route::post('/', [LaporanDonasiController::class, 'store']);
+        Route::post('/{id}/send', [LaporanDonasiController::class, 'send']);
+        Route::delete('/{id}', [LaporanDonasiController::class, 'destroy']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| FALLBACK ROUTE
+|--------------------------------------------------------------------------
+*/
+Route::fallback(function () {
+    return response()->json([
+        'success' => false,
+        'message' => 'Endpoint tidak ditemukan'
+    ], 404);
 });

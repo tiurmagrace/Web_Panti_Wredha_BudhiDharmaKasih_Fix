@@ -1,288 +1,186 @@
 /* ========================================
-   KELOLA PENGHUNI - JAVASCRIPT LOGIC (LARAVEL VERSION)
+   KELOLA PENGHUNI - TERHUBUNG KE DATABASE
    ======================================== */
 
-// Security Check - Redirect ke login jika belum login
 if (!localStorage.getItem('adminLoggedIn')) {
     window.location.href = '/admin/login';
 }
 
-// Inisialisasi Vue App
 const { createApp } = window.Vue;
 
 createApp({
     data() {
         return {
-            // DATA UTAMA
-            alertStatus: null, 
-            isModalOpen: false, 
-            modalMode: 'detail', 
-            currentPage: 1, 
-            itemsPerPage: 20, 
-            tempFormData: {}, 
-            editingIndex: -1, 
-            
-            // DATA PENCARIAN & FILTER
-            searchQuery: '', 
-            filterPaviliun: '',
-            filterTahun: '',
-            
-            // DATA PENGHUNI - akan diload dari localStorage
-            penghuniList: [],
-            
-            currentUrl: window.location.href,
-            activePage: 'penghuni',  // ✅ Ganti nama biar ga collision
-            unreadCount: 0
+            alertStatus: null, isModalOpen: false, modalMode: 'detail',
+            currentPage: 1, itemsPerPage: 20, tempFormData: {}, editingId: null,
+            searchQuery: '', filterPaviliun: '', filterTahun: '',
+            penghuniList: [], isLoading: false,
+            currentUrl: window.location.href, activePage: 'penghuni', unreadCount: 0
         }
     },
     
     computed: {
-        // Ambil tahun unik untuk dropdown
         uniqueYears() {
             if (!this.penghuniList || this.penghuniList.length === 0) return [];
-            const years = this.penghuniList.map(item => item.tahun).filter(Boolean);
+            const years = this.penghuniList.map(item => {
+                if (item.tgl_masuk) {
+                    return new Date(item.tgl_masuk).getFullYear().toString();
+                }
+                return null;
+            }).filter(Boolean);
             return [...new Set(years)].sort((a, b) => b - a);
         },
 
-        // Filter gabungan (search + paviliun + tahun + sorting)
         filteredList() {
-            const hasilFilter = this.penghuniList.filter(item => {
+            return this.penghuniList.filter(item => {
                 const search = this.searchQuery.toLowerCase();
-                
-                // Logika Search Bar
                 const matchSearch = (item.nik && item.nik.toString().toLowerCase().includes(search)) ||
                                     (item.nama && item.nama.toLowerCase().includes(search)) ||
                                     (item.kota && item.kota.toLowerCase().includes(search));
-
-                // Logika Filter Paviliun
                 const matchPaviliun = this.filterPaviliun === '' || 
                                     (item.paviliun && item.paviliun.toUpperCase() === this.filterPaviliun.toUpperCase());
-
-                // Logika Filter Tahun
-                const matchTahun = this.filterTahun === '' || 
-                                    (item.tahun && item.tahun.toString() === this.filterTahun.toString());
-
+                const itemYear = item.tgl_masuk ? new Date(item.tgl_masuk).getFullYear().toString() : '';
+                const matchTahun = this.filterTahun === '' || itemYear === this.filterTahun;
                 return matchSearch && matchPaviliun && matchTahun;
-            });
-
-            // Sorting by tanggal masuk (terbaru dulu)
-            return hasilFilter.sort((a, b) => {
-                const dateA = new Date(a.tgl_masuk);
-                const dateB = new Date(b.tgl_masuk);
-                return dateB - dateA;
-            });
+            }).sort((a, b) => new Date(b.tgl_masuk) - new Date(a.tgl_masuk));
         },
 
-        // Pagination
-        totalPages() { 
-            return Math.ceil(this.filteredList.length / this.itemsPerPage); 
-        },
-        
+        totalPages() { return Math.ceil(this.filteredList.length / this.itemsPerPage); },
         paginatedList() {
             const start = (this.currentPage - 1) * this.itemsPerPage;
-            const end = start + this.itemsPerPage;
-            return this.filteredList.slice(start, end);
+            return this.filteredList.slice(start, start + this.itemsPerPage);
         }
     },
 
     mounted() {
         console.log('✅ Vue Kelola Penghuni Mounted!');
-        
-        // Load data dari localStorage PERTAMA KALI
         this.loadDataPenghuni();
         
-        // Check URL params untuk alert sukses
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.get('status') === 'success') {
             this.alertStatus = 'success';
-            
-            // RELOAD data sekali lagi untuk memastikan data terbaru muncul
-            setTimeout(() => {
-                this.loadDataPenghuni();
-                
-                // Tampilkan SweetAlert
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Data Berhasil Ditambahkan!',
-                    text: 'Penghuni baru telah ditambahkan ke dalam sistem.',
-                    confirmButtonColor: '#21698a',
-                    timer: 3000
-                });
-            }, 100);
-            
-            // Hapus parameter dari URL
+            Swal.fire({ icon: 'success', title: 'Data Berhasil Ditambahkan!', confirmButtonColor: '#21698a', timer: 3000 });
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     },
 
     methods: {
-        // Method untuk load data dari localStorage
-        loadDataPenghuni() {
-            const dataBaru = JSON.parse(localStorage.getItem('penghuniBaru'));
-            
-            if (dataBaru && Array.isArray(dataBaru) && dataBaru.length > 0) {
-                this.penghuniList = dataBaru;
-                console.log('📦 Data loaded:', dataBaru.length, 'penghuni');
-                console.log('📋 Latest data:', dataBaru[dataBaru.length - 1].nama);
-            } else {
-                // Jika belum ada data, gunakan dummy data
-                this.penghuniList = [
-                    { 
-                        nik: '1234567890123456', 
-                        nama: 'tino prasetyo', 
-                        ttl: 'majenang, 25/05/1957', 
-                        usia: 67, 
-                        kota: 'purwokerto', 
-                        tahun: '2024', 
-                        paviliun: 'bougenville 1', 
-                        agama: 'katolik', 
-                        alamat: 'jl. kenanga no. 3', 
-                        gender: 'pria', 
-                        status: 'duda', 
-                        pj: 'budi (anak)', 
-                        hubungan: 'anak', 
-                        telp: '08123456789', 
-                        alamat_pj: 'jakarta', 
-                        penyakit: 'stroke ringan', 
-                        alergi: 'ayam', 
-                        kebutuhan: 'walker', 
-                        obat: 'simvastatin', 
-                        status_sehat: 'stabil', 
-                        tgl_masuk: '2024-01-01', 
-                        rujukan: 'keluarga', 
-                        catatan: '-', 
-                        foto: null 
-                    },
-                    { 
-                        nik: '3302055505570001', 
-                        nama: 'arifin', 
-                        ttl: 'majenang, 25/05/1957', 
-                        usia: 67, 
-                        kota: 'purwokerto', 
-                        tahun: '2024', 
-                        paviliun: 'bougenville 1', 
-                        agama: 'islam', 
-                        alamat: 'jl. merdeka no. 1', 
-                        gender: 'pria', 
-                        status: 'menikah', 
-                        pj: 'siti (istri)', 
-                        hubungan: 'istri', 
-                        telp: '0812999999', 
-                        alamat_pj: 'purwokerto', 
-                        penyakit: 'diabetes', 
-                        alergi: '-', 
-                        kebutuhan: '-', 
-                        obat: 'metformin', 
-                        status_sehat: 'perlu kontrol', 
-                        tgl_masuk: '2024-02-15', 
-                        rujukan: 'dinas sosial', 
-                        catatan: '-', 
-                        foto: null 
+        async loadDataPenghuni() {
+            this.isLoading = true;
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/penghuni', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
                     }
-                ];
-                localStorage.setItem('penghuniBaru', JSON.stringify(this.penghuniList));
-                console.log('💾 Dummy data saved to localStorage');
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.penghuniList = data.data;
+                }
+            } catch (error) {
+                console.error('Error loading penghuni:', error);
+            } finally {
+                this.isLoading = false;
             }
         },
         
-        // Format text helper functions
-        formatUpperCase(str) { 
-            return str ? String(str).toUpperCase() : '-'; 
-        },
+        formatUpperCase(str) { return str ? String(str).toUpperCase() : '-'; },
+        formatTitleCase(str) { return str ? String(str).toLowerCase().replace(/(?:^|\s)\w/g, m => m.toUpperCase()) : '-'; },
         
-        formatTitleCase(str) { 
-            return str ? String(str).toLowerCase().replace(/(?:^|\s)\w/g, m => m.toUpperCase()) : '-'; 
-        },
-        
-        // Reset semua filter
         resetFilter() {
-            this.filterPaviliun = '';
-            this.filterTahun = '';
-            this.searchQuery = '';
-            this.currentPage = 1; 
+            this.filterPaviliun = ''; this.filterTahun = ''; this.searchQuery = ''; this.currentPage = 1;
         },
 
-        // Trigger file input untuk upload foto
         triggerFileInput() {
-            if (this.modalMode === 'edit') { 
-                this.$refs.fileInput.click(); 
-            }
+            if (this.modalMode === 'edit') this.$refs.fileInput.click();
         },
 
-        // Handle upload foto
         handlePhotoUpload(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (ev) => {
-                    this.tempFormData.foto = ev.target.result;
-                };
+                reader.onload = (ev) => { this.tempFormData.foto = ev.target.result; };
                 reader.readAsDataURL(file);
             }
         },
 
-        // Open modal (detail atau edit)
         openModal(item, mode) {
             this.modalMode = mode;
             this.tempFormData = { ...item };
-            this.editingIndex = this.penghuniList.findIndex(p => p.nik === item.nik);
+            this.editingId = item.id;
             this.isModalOpen = true;
         },
 
-        // Close modal
         closeModal() {
-            this.isModalOpen = false;
-            this.tempFormData = {};
-            this.editingIndex = -1;
+            this.isModalOpen = false; this.tempFormData = {}; this.editingId = null;
         },
 
-        // Process edit dan save
-        processEdit() {
-            if (this.editingIndex !== -1) {
-                this.penghuniList[this.editingIndex] = { ...this.tempFormData };
-                
-                // Extract tahun dari tgl_masuk
-                if (this.tempFormData.tgl_masuk) {
-                    const year = new Date(this.tempFormData.tgl_masuk).getFullYear();
-                    this.penghuniList[this.editingIndex].tahun = year.toString();
-                }
-                
-                localStorage.setItem('penghuniBaru', JSON.stringify(this.penghuniList));
-                
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Data Berhasil Diubah!',
-                    text: 'Perubahan data penghuni telah disimpan.',
-                    confirmButtonColor: '#21698a'
+        async processEdit() {
+            if (!this.editingId) return;
+            
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch(`/api/penghuni/${this.editingId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(this.tempFormData)
                 });
-                
-                this.closeModal();
+
+                const data = await response.json();
+                if (data.success) {
+                    await this.loadDataPenghuni();
+                    Swal.fire({ icon: 'success', title: 'Data Berhasil Diubah!', confirmButtonColor: '#21698a' });
+                    this.closeModal();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: error.message });
             }
         },
 
-        // Pagination controls
-        prevPage() {
-            if (this.currentPage > 1) this.currentPage--;
-        },
-        
-        nextPage() {
-            if (this.currentPage < this.totalPages) this.currentPage++;
+        async deletePenghuni(item) {
+            const result = await Swal.fire({
+                title: 'Hapus Data?', text: `Yakin hapus data ${item.nama}?`, icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya, Hapus'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const token = localStorage.getItem('admin_token');
+                    const response = await fetch(`/api/penghuni/${item.id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        await this.loadDataPenghuni();
+                        Swal.fire({ icon: 'success', title: 'Terhapus!', timer: 1500 });
+                    }
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Error', text: error.message });
+                }
+            }
         },
 
-        // Logout function
+        prevPage() { if (this.currentPage > 1) this.currentPage--; },
+        nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; },
+
         logoutAdmin() {
             Swal.fire({
-                title: 'Konfirmasi Logout',
-                text: 'Apakah Anda yakin ingin keluar?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#21698a',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, Logout',
-                cancelButtonText: 'Batal'
+                title: 'Konfirmasi Logout', text: 'Apakah Anda yakin ingin keluar?', icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#21698a', cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Logout', cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
+                    localStorage.removeItem('admin_token');
                     window.location.href = '/admin/login';
                 }
             });

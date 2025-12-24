@@ -1,7 +1,6 @@
-// ==========================================
-// 1. data-barang.js - FIXED MOUNTING
-// ==========================================
-// File: public/assets/js/data-barang.js
+/* ========================================
+   DATA BARANG - TERHUBUNG KE DATABASE
+   ======================================== */
 
 if (!localStorage.getItem('adminLoggedIn')) {
     window.location.href = '/admin/login';
@@ -9,14 +8,13 @@ if (!localStorage.getItem('adminLoggedIn')) {
 
 const { createApp } = window.Vue;
 
-// Create separate Vue instance for this page
-const barangApp = createApp({
+createApp({
     data() {
         return {
             searchQuery: '', startDate: '', endDate: '', filterType: 'tgl_masuk',
             currentPage: 1, itemsPerPage: 10, isModalOpen: false, modalMode: 'detail',
-            tempFormData: {}, editingIndex: -1, barangList: [],
-            unreadCount: 0, currentUrl: window.location.href
+            tempFormData: {}, editingId: null, barangList: [], isLoading: false,
+            unreadCount: 0, currentUrl: window.location.href, activePage: 'barang'
         }
     },
     computed: {
@@ -25,21 +23,13 @@ const barangApp = createApp({
                 const query = this.searchQuery.toLowerCase();
                 const matchSearch = 
                     (item.nama && item.nama.toLowerCase().includes(query)) ||
-                    (item.kategori && item.kategori.toLowerCase().includes(query)) ||
-                    (item.brg_masuk && item.brg_masuk.toLowerCase().includes(query)) ||
-                    (item.sisa_stok && item.sisa_stok.toLowerCase().includes(query));
+                    (item.kategori && item.kategori.toLowerCase().includes(query));
                 let matchDate = true;
                 if (this.startDate && this.endDate) {
-                    const targetDateStr = this.filterType === 'tgl_masuk' ? item.tgl_masuk : item.expired;
-                    const parseDate = (str) => {
-                        if (!str || str === '-') return null;
-                        const [d, m, y] = str.split('/');
-                        return new Date(`${y}-${m}-${d}`);
-                    };
-                    const targetDate = parseDate(targetDateStr);
+                    const targetDate = this.filterType === 'tgl_masuk' ? new Date(item.tgl_masuk) : new Date(item.expired);
                     const start = new Date(this.startDate);
                     const end = new Date(this.endDate);
-                    if (!targetDate) matchDate = false;
+                    if (!targetDate || isNaN(targetDate)) matchDate = false;
                     else matchDate = targetDate >= start && targetDate <= end;
                 }
                 return matchSearch && matchDate;
@@ -51,141 +41,133 @@ const barangApp = createApp({
             return this.filteredList.slice(start, start + this.itemsPerPage);
         },
         totalStok() { return this.barangList.length; },
-        stokMenipis() { return this.barangList.filter(i => this.isStokMenipis(i.sisa_stok)).length; },
+        stokMenipis() { return this.barangList.filter(i => i.sisa_stok < 5).length; },
         jumlahHampirExpired() {
-            let count = 0;
             const today = new Date();
-            this.barangList.forEach(item => {
-                if (item.expired && item.expired !== '-') {
-                    const parts = item.expired.split('/'); 
-                    const expDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                    const diffTime = expDate - today;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    if (diffDays <= 30 && diffDays >= 0) count++;
-                }
-            });
-            return count;
+            return this.barangList.filter(item => {
+                if (!item.expired) return false;
+                const expDate = new Date(item.expired);
+                const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                return diffDays <= 30 && diffDays >= 0;
+            }).length;
         }
     },
     mounted() {
-        const savedBarang = JSON.parse(localStorage.getItem('barangList'));
-        if (savedBarang && Array.isArray(savedBarang) && savedBarang.length > 0) {
-            this.barangList = savedBarang;
-        } else {
-            this.barangList = [
-                { nama: 'Pampers uk. M', kategori: 'Kesehatan', tgl_masuk: '15/05/2025', 
-                  tgl_keluar: '30/09/2025', brg_masuk: '5 pack', brg_keluar: '2 Pack', 
-                  sisa_stok: '3 pack', expired: '-' }
-            ];
-            localStorage.setItem('barangList', JSON.stringify(this.barangList));
-        }
-        this.sinkronDonasi();
+        console.log('✅ Data Barang Mounted!');
+        this.loadBarang();
     },
     methods: {
+        async loadBarang() {
+            this.isLoading = true;
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/barang', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.barangList = data.data;
+                }
+            } catch (error) {
+                console.error('Error loading barang:', error);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        formatTanggal(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            if (isNaN(d)) return '-';
+            return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+        },
+
         resetFilter() {
-            this.startDate = ''; this.endDate = ''; this.searchQuery = '';
-            this.filterType = 'tgl_masuk';
+            this.startDate = ''; this.endDate = ''; this.searchQuery = ''; this.filterType = 'tgl_masuk';
         },
-        isStokMenipis(stokStr) {
-            if (!stokStr) return false;
-            const num = parseInt(stokStr);
-            return !isNaN(num) && num < 5;
-        },
-        sinkronDonasi() {
-            let donasiList = JSON.parse(localStorage.getItem('donasiList'));
-            if (!donasiList) return;
-            let adaDataBaru = false;
-            donasiList.forEach(donasi => {
-                if (donasi.jenis !== 'Tunai' && !donasi.isSynced) {
-                    const itemBaru = {
-                        nama: donasi.detail || 'Barang Donasi',
-                        kategori: donasi.kategori || 'Lainnya',
-                        tgl_masuk: donasi.tanggal, expired: '-', tgl_keluar: '-',
-                        brg_masuk: '-', brg_keluar: '-', sisa_stok: '-', kondisi: 'Baik'
-                    };
-                    this.barangList.unshift(itemBaru);
-                    donasi.isSynced = true; 
-                    adaDataBaru = true;
-                }
-            });
-            if (adaDataBaru) {
-                localStorage.setItem('barangList', JSON.stringify(this.barangList));
-                localStorage.setItem('donasiList', JSON.stringify(donasiList));
-            }
-        },
+
+        isStokMenipis(stok) { return stok < 5; },
+
         openModal(item, mode) {
-            this.tempFormData = { ...item }; 
+            this.tempFormData = { ...item };
             this.modalMode = mode;
-            this.editingIndex = this.barangList.indexOf(item);
-            if (mode === 'edit') {
-                if (item.tgl_masuk && item.tgl_masuk.includes('/')) {
-                    const parts = item.tgl_masuk.split('/');
-                    if(parts.length === 3) this.tempFormData.tgl_masuk_raw = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                }
-                if (item.expired && item.expired !== '-' && item.expired.includes('/')) {
-                    const parts = item.expired.split('/');
-                    if(parts.length === 3) this.tempFormData.expired_raw = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                }
-            }
+            this.editingId = item.id;
             this.isModalOpen = true;
         },
-        closeModal() { this.isModalOpen = false; },
-        processEdit() {
-            Swal.fire({
+
+        closeModal() { this.isModalOpen = false; this.tempFormData = {}; this.editingId = null; },
+
+        async processEdit() {
+            const result = await Swal.fire({
                 title: 'Simpan Perubahan?', icon: 'question', showCancelButton: true,
                 confirmButtonColor: '#1a5c7a', cancelButtonColor: '#d33'
-            }).then((res) => {
-                if (res.isConfirmed) {
-                    if (this.tempFormData.tgl_masuk_raw) {
-                        let d = new Date(this.tempFormData.tgl_masuk_raw);
-                        this.tempFormData.tgl_masuk = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-                    }
-                    if (this.tempFormData.expired_raw) {
-                        let d = new Date(this.tempFormData.expired_raw);
-                        this.tempFormData.expired = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-                    } else if (this.tempFormData.expired_raw === '') {
-                        this.tempFormData.expired = '-';
-                    }
-                    if (this.editingIndex !== -1) {
-                        this.barangList.splice(this.editingIndex, 1, this.tempFormData);
-                        localStorage.setItem('barangList', JSON.stringify(this.barangList));
-                        let logs = JSON.parse(localStorage.getItem('activityLog')) || [];
-                        let pesanAktivitas = (this.tempFormData.brg_masuk === '-' || this.tempFormData.sisa_stok === '-') 
-                            ? "Admin menginput stok awal" : "Admin mengubah data barang";
-                        logs.push({ text: `${pesanAktivitas}: ${this.tempFormData.nama}`, time: new Date() });
-                        localStorage.setItem('activityLog', JSON.stringify(logs));
-                    }
-                    this.closeModal();
-                    Swal.fire('Berhasil', 'Data barang berhasil diupdate', 'success');
-                }
             });
+
+            if (result.isConfirmed) {
+                try {
+                    const token = localStorage.getItem('admin_token');
+                    const response = await fetch(`/api/barang/${this.editingId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify(this.tempFormData)
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        await this.loadBarang();
+                        this.closeModal();
+                        Swal.fire('Berhasil', 'Data barang berhasil diupdate', 'success');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    Swal.fire('Error', error.message, 'error');
+                }
+            }
         },
-        deleteItem(item) {
-            Swal.fire({
+
+        async deleteItem(item) {
+            const result = await Swal.fire({
                 title: 'Yakin Hapus Barang?', text: item.nama, icon: 'warning',
                 showCancelButton: true, confirmButtonText: 'Ya, Hapus', confirmButtonColor: '#dc3545'
-            }).then((res) => {
-                if (res.isConfirmed) {
-                    this.barangList = this.barangList.filter(i => i !== item);
-                    localStorage.setItem('barangList', JSON.stringify(this.barangList));
-                    let logs = JSON.parse(localStorage.getItem('activityLog')) || [];
-                    logs.push({ text: `Admin menghapus barang: ${item.nama}`, time: new Date() });
-                    localStorage.setItem('activityLog', JSON.stringify(logs));
-                    Swal.fire('Terhapus!', 'Data barang telah dihapus.', 'success');
-                }
             });
+
+            if (result.isConfirmed) {
+                try {
+                    const token = localStorage.getItem('admin_token');
+                    const response = await fetch(`/api/barang/${item.id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        await this.loadBarang();
+                        Swal.fire('Terhapus!', 'Data barang telah dihapus.', 'success');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', error.message, 'error');
+                }
+            }
         },
+
         isNearExpiry(dateStr) {
-            if (!dateStr || dateStr === '-') return false;
-            const parts = dateStr.split('/');
-            if (parts.length !== 3) return false;
-            const expDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            if (!dateStr) return false;
+            const expDate = new Date(dateStr);
             const today = new Date();
             const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
             return diffDays <= 30 && diffDays > 0;
         },
+
         prevPage() { if (this.currentPage > 1) this.currentPage--; },
         nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; },
+
         logoutAdmin() {
             Swal.fire({
                 title: 'Keluar?', text: "Sesi admin akan diakhiri.", icon: 'warning',
@@ -194,6 +176,7 @@ const barangApp = createApp({
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
+                    localStorage.removeItem('admin_token');
                     window.location.href = '/admin/login';
                 }
             });

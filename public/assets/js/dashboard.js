@@ -1,4 +1,7 @@
-// --- SECURITY CHECK (SATPAM) ---
+/* ========================================
+   DASHBOARD ADMIN - TERHUBUNG KE DATABASE
+   ======================================== */
+
 if (!localStorage.getItem('adminLoggedIn')) {
     window.location.href = '/admin/login';
 }
@@ -8,148 +11,100 @@ const { createApp } = window.Vue;
 createApp({
     data() {
         return {
-            searchQuery: '',
-            notifications: [],
-            displayedNotifications: [],
-            unreadCount: 0,
-            activities: [], 
-            feedbacks: [], 
-            totalPenghuni: 0, 
-            totalUang: 0, 
-            totalBarang: 0, 
-            totalStok: 0, 
-            stokMenipis: 0, 
-            jumlahHampirExpired: 0,
-            totalSembako: 0, 
-            totalPakaian: 0, 
-            totalObat: 0,
-            currentUrl: window.location.href,
-            activePage: 'dashboard' // ✅ FIXED: ganti dari currentPage
+            searchQuery: '', notifications: [], displayedNotifications: [],
+            unreadCount: 0, activities: [], feedbacks: [],
+            totalPenghuni: 0, totalUang: 0, totalBarang: 0, totalStok: 0,
+            stokMenipis: 0, jumlahHampirExpired: 0,
+            totalSembako: 0, totalPakaian: 0, totalObat: 0,
+            currentUrl: window.location.href, activePage: 'dashboard',
+            isLoading: false
         }
     },
     computed: {
         filteredFeedbacks() {
             if (!this.searchQuery) return this.feedbacks;
             const query = this.searchQuery.toLowerCase();
-            
-            return this.feedbacks.filter(item => {
-                return (item.nama && item.nama.toLowerCase().includes(query)) ||
-                       (item.pesan && item.pesan.toLowerCase().includes(query)) ||
-                       (item.tanggal && item.tanggal.toLowerCase().includes(query));
-            });
+            return this.feedbacks.filter(item => 
+                (item.nama && item.nama.toLowerCase().includes(query)) ||
+                (item.pesan && item.pesan.toLowerCase().includes(query))
+            );
         },
-
         filteredActivities() {
             if (!this.searchQuery) return this.activities;
             const query = this.searchQuery.toLowerCase();
-
-            return this.activities.filter(act => {
-                return (act.text && act.text.toLowerCase().includes(query)) ||
-                       (act.time && act.time.toLowerCase().includes(query));
-            });
-        },
-
-        filteredNotifications() {
-            const source = this.searchQuery ? this.notifications : this.displayedNotifications;
-            const query = this.searchQuery.toLowerCase();
-
-            return source.filter(notif => {
-                return notif.text && notif.text.toLowerCase().includes(query);
-            });
+            return this.activities.filter(act => 
+                (act.text && act.text.toLowerCase().includes(query))
+            );
         }
     },
     mounted() {
         console.log('✅ Dashboard Mounted!');
-        
-        // ✅ Inisialisasi dummy data barang kalau belum ada
-        this.initDummyBarang();
-        
-        this.loadNotifications();
-        this.loadActivities();
-        this.loadFeedbacks();
-        this.calculateStats();
-        
-        // ✅ AUTO REFRESH setiap 5 detik
-        setInterval(() => {
-            this.calculateStats();
-            console.log('🔄 Stats auto-refreshed');
-        }, 5000);
+        this.loadAllData();
+        setInterval(() => this.loadAllData(), 30000); // Refresh setiap 30 detik
     },
     methods: {
-        // ✅ Method untuk inisialisasi dummy data barang
-        initDummyBarang() {
-            const barangList = JSON.parse(localStorage.getItem('barangList'));
-            
-            if (!barangList || barangList.length === 0) {
-                const dummyBarang = [
-                    { 
-                        kode: 'SMB-123',
-                        nama: 'Beras Premium', 
-                        kategori: 'Sembako', 
-                        tgl_masuk: '01/01/2025', 
-                        tgl_keluar: '-', 
-                        brg_masuk: '50 Kg', 
-                        brg_keluar: '10 Kg', 
-                        sisa_stok: '40',
-                        satuan: 'Kg',
-                        stok_awal: 50,
-                        stok_keluar: 10,
-                        expired: '31/12/2025',
-                        kondisi: 'Baik'
-                    },
-                    { 
-                        kode: 'OBT-456',
-                        nama: 'Paracetamol', 
-                        kategori: 'Obat-obatan', 
-                        tgl_masuk: '15/01/2025', 
-                        tgl_keluar: '-', 
-                        brg_masuk: '100 Strip', 
-                        brg_keluar: '95 Strip', 
-                        sisa_stok: '5',
-                        satuan: 'Strip',
-                        stok_awal: 100,
-                        stok_keluar: 95,
-                        expired: '28/02/2025',
-                        kondisi: 'Baik'
-                    },
-                    { 
-                        kode: 'ALT-789',
-                        nama: 'Masker Medis', 
-                        kategori: 'Alat Kesehatan', 
-                        tgl_masuk: '10/01/2025', 
-                        tgl_keluar: '-', 
-                        brg_masuk: '500 Pcs', 
-                        brg_keluar: '450 Pcs', 
-                        sisa_stok: '50',
-                        satuan: 'Pcs',
-                        stok_awal: 500,
-                        stok_keluar: 450,
-                        expired: '-',
-                        kondisi: 'Baik'
-                    }
-                ];
-                
-                localStorage.setItem('barangList', JSON.stringify(dummyBarang));
-                console.log('💾 Created dummy barang data with', dummyBarang.length, 'items');
+        async loadAllData() {
+            this.isLoading = true;
+            const token = localStorage.getItem('admin_token');
+            const headers = { 'Accept': 'application/json', 'Authorization': 'Bearer ' + token };
+
+            try {
+                // Load Penghuni Statistics
+                const penghuniRes = await fetch('/api/penghuni/statistics', { headers });
+                const penghuniData = await penghuniRes.json();
+                if (penghuniData.success) {
+                    this.totalPenghuni = penghuniData.data.total || 0;
+                }
+
+                // Load Donasi Statistics
+                const donasiRes = await fetch('/api/donasi/statistics', { headers });
+                const donasiData = await donasiRes.json();
+                if (donasiData.success) {
+                    this.totalUang = donasiData.data.total_tunai || 0;
+                    this.totalBarang = donasiData.data.total_barang || 0;
+                }
+
+                // Load Barang Statistics
+                const barangRes = await fetch('/api/barang/statistics', { headers });
+                const barangData = await barangRes.json();
+                if (barangData.success) {
+                    this.totalStok = barangData.data.total || 0;
+                    this.stokMenipis = barangData.data.stok_menipis || 0;
+                    this.jumlahHampirExpired = barangData.data.hampir_expired || 0;
+                }
+
+                // Load Feedback
+                const feedbackRes = await fetch('/api/feedback', { headers });
+                const feedbackData = await feedbackRes.json();
+                if (feedbackData.success) {
+                    this.feedbacks = feedbackData.data.slice(0, 5);
+                }
+
+                // Load Aktivitas Log
+                const aktivitasRes = await fetch('/api/aktivitas-log', { headers });
+                const aktivitasData = await aktivitasRes.json();
+                if (aktivitasData.success) {
+                    this.activities = aktivitasData.data.slice(0, 5);
+                }
+
+                // Load Notifikasi
+                const notifRes = await fetch('/api/notifikasi', { headers });
+                const notifData = await notifRes.json();
+                if (notifData.success) {
+                    this.notifications = notifData.data;
+                    this.displayedNotifications = notifData.data.slice(0, 5);
+                    this.unreadCount = notifData.data.filter(n => !n.is_read).length;
+                }
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            } finally {
+                this.isLoading = false;
             }
         },
-        
+
         formatRupiah(angka) {
             return new Intl.NumberFormat('id-ID').format(angka);
-        },
-
-        parseNumber(str) {
-            if (!str) return 0;
-            return parseInt(str.toString().replace(/\D/g, '')) || 0;
-        },
-
-        dateToTimestamp(dateStr) {
-            if (!dateStr || dateStr === '-') return 0;
-            const parts = dateStr.split('/');
-            if (parts.length === 3) {
-                return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
-            }
-            return 0;
         },
 
         truncateText(text, length) {
@@ -161,211 +116,20 @@ createApp({
         showFullMessage(item) {
             Swal.fire({
                 title: `Pesan dari ${item.nama}`,
-                html: `
-                    <div style="text-align: left; font-size: 0.95rem; line-height: 1.6;">
-                        <p><strong>Tanggal:</strong> ${item.tanggal} • ${item.jam || '-'}</p>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef; margin: 10px 0;">
-                            <i class="fas fa-quote-left text-muted mb-2"></i><br>
-                            ${item.pesan}
-                        </div>
-                        <p class="mb-1"><small><i class="fas fa-envelope me-2"></i> ${item.email || '-'}</small></p>
-                        <p class="mb-0"><small><i class="fas fa-phone me-2"></i> ${item.telepon || '-'}</small></p>
-                    </div>
-                `,
-                confirmButtonText: 'Tutup',
-                confirmButtonColor: '#1a5c7a',
-                width: '500px'
-            });
-        },
-
-        loadFeedbacks() {
-            const data = JSON.parse(localStorage.getItem('feedbackList')) || [];
-            this.feedbacks = data.sort((a, b) => b.id - a.id).slice(0, 5);
-        },
-
-        loadActivities() {
-            const logs = JSON.parse(localStorage.getItem('activityLog')) || [];
-            this.activities = logs.slice().reverse().slice(0, 5);
-        },
-
-        loadNotifications() {
-            let allNotifs = [];
-            const donasiList = JSON.parse(localStorage.getItem('donasiList')) || [];
-            const barangList = JSON.parse(localStorage.getItem('barangList')) || [];
-
-            // 1. Notifikasi Donasi
-            donasiList.forEach(d => {
-                let time = d.id || this.dateToTimestamp(d.tanggal);
-                allNotifs.push({
-                    text: `Donasi masuk dari ${d.donatur} (${d.jenis}: ${d.detail || d.jumlah})`,
-                    type: 'donasi',
-                    timestamp: time
-                });
-            });
-
-            // 2. Notifikasi Stok
-            barangList.forEach(b => {
-                let itemTime = this.dateToTimestamp(b.tgl_masuk);
-                let stok = parseInt(b.sisa_stok);
-                
-                // Stok Menipis
-                if (!isNaN(stok) && stok < 5) {
-                    allNotifs.push({
-                        text: `Stok ${b.nama} Menipis! (Sisa: ${b.sisa_stok})`,
-                        type: 'stok',
-                        timestamp: itemTime
-                    });
-                }
-                
-                // Stok Expired
-                if (b.expired && b.expired !== '-') {
-                    const parts = b.expired.split('/'); 
-                    const expDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                    const today = new Date();
-                    const diffTime = expDate - today;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                    if (diffDays <= 30 && diffDays >= 0) {
-                        allNotifs.push({
-                            text: `⚠️ ${b.nama} Segera Expired (${b.expired})`,
-                            type: 'stok', 
-                            timestamp: itemTime
-                        });
-                    }
-                }
-            });
-
-            this.notifications = allNotifs.sort((a, b) => b.timestamp - a.timestamp); 
-            this.displayedNotifications = this.notifications.slice(0, 5);
-
-            const lastRead = parseInt(localStorage.getItem('lastReadTimestamp')) || 0;
-            this.unreadCount = allNotifs.filter(n => n.timestamp > lastRead).length;
-        },
-
-        calculateStats() {
-            // 1. Total Penghuni
-            const penghuniList = JSON.parse(localStorage.getItem('penghuniBaru'));
-            this.totalPenghuni = (penghuniList && Array.isArray(penghuniList)) ? penghuniList.length : 0;
-
-            // 2. Load Donasi & Barang dari localStorage
-            const donasiList = JSON.parse(localStorage.getItem('donasiList')) || [];
-            const barangList = JSON.parse(localStorage.getItem('barangList')) || [];
-
-            // ✅ FIXED: Hitung Total Donasi (ALL TIME - REALTIME)
-            let totalUangAllTime = 0;
-            let totalBarangAllTime = 0;
-
-            donasiList.forEach(d => {
-                if (d.jenis === 'Tunai') {
-                    totalUangAllTime += this.parseNumber(d.jumlah);
-                } else if (d.jenis === 'Barang') {
-                    let qty = parseInt(d.jumlah) || 1;
-                    totalBarangAllTime += qty;
-                }
-            });
-
-            // Set Total Donasi Realtime
-            this.totalUang = totalUangAllTime;
-            this.totalBarang = totalBarangAllTime;
-
-            // ✅ Hitung Donasi Bulan Ini (untuk card ke-3)
-            const now = new Date();
-            const currentMonth = now.getMonth() + 1;
-            const currentYear = now.getFullYear();
-
-            let hitungSembako = 0;
-            let hitungPakaian = 0;
-            let hitungObat = 0;
-
-            donasiList.forEach(d => {
-                // Cek apakah donasi bulan ini
-                let isThisMonth = false;
-                if (d.tanggal && d.tanggal.includes('/')) {
-                    const parts = d.tanggal.split('/'); 
-                    const dMonth = parseInt(parts[1]);
-                    const dYear = parseInt(parts[2]);
-                    if (dMonth === currentMonth && dYear === currentYear) {
-                        isThisMonth = true;
-                    }
-                }
-
-                // Hitung barang bulan ini berdasarkan kategori
-                if (isThisMonth && d.jenis === 'Barang') {
-                    let kategori = d.kategori ? d.kategori.toLowerCase() : '';
-                    let detail = d.detail ? d.detail.toLowerCase() : '';
-                    
-                    if (kategori.includes('sembako') || 
-                        detail.includes('sembako') || 
-                        detail.includes('makanan') || 
-                        detail.includes('minuman') ||
-                        detail.includes('beras') ||
-                        detail.includes('mie')) {
-                        hitungSembako++;
-                    } else if (kategori.includes('pakaian') || 
-                               detail.includes('pakaian') || 
-                               detail.includes('baju') || 
-                               detail.includes('celana')) {
-                        hitungPakaian++;
-                    } else if (kategori.includes('obat') ||
-                               kategori.includes('kesehatan') ||
-                               kategori.includes('medis') ||
-                               detail.includes('obat') || 
-                               detail.includes('kesehatan') || 
-                               detail.includes('medis')) {
-                        hitungObat++;
-                    }
-                }
-            });
-
-            this.totalSembako = hitungSembako;
-            this.totalPakaian = hitungPakaian;
-            this.totalObat = hitungObat;
-
-            // 3. ✅ Statistik Stok Gudang (REALTIME)
-            this.totalStok = barangList.length;
-            
-            this.stokMenipis = barangList.filter(b => {
-                let sisa = parseInt(b.sisa_stok);
-                return !isNaN(sisa) && sisa < 5;
-            }).length;
-
-            let countExp = 0;
-            const today = new Date();
-            barangList.forEach(item => {
-                if (item.expired && item.expired !== '-') {
-                    const parts = item.expired.split('/'); 
-                    const expDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                    const diffTime = expDate - today;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    if (diffDays <= 30 && diffDays >= 0) {
-                        countExp++;
-                    }
-                }
-            });
-            this.jumlahHampirExpired = countExp;
-
-            // ✅ Console log untuk debugging
-            console.log('📊 Stats Updated (Realtime):', {
-                totalUang: this.totalUang,
-                totalBarang: this.totalBarang,
-                totalStok: this.totalStok,
-                stokMenipis: this.stokMenipis,
-                hampirExpired: this.jumlahHampirExpired
+                html: `<div style="text-align: left;">${item.pesan}</div>`,
+                confirmButtonText: 'Tutup', confirmButtonColor: '#1a5c7a'
             });
         },
 
         logoutAdmin() {
             Swal.fire({
-                title: 'Keluar?', 
-                text: "Sesi admin akan diakhiri.", 
-                icon: 'warning',
-                showCancelButton: true, 
-                confirmButtonColor: '#d33', 
-                cancelButtonColor: '#3085d6',
+                title: 'Keluar?', text: "Sesi admin akan diakhiri.", icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Ya, Logout'
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
+                    localStorage.removeItem('admin_token');
                     window.location.href = '/admin/login';
                 }
             });

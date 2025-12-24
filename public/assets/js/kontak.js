@@ -1,3 +1,7 @@
+/* ========================================
+   KONTAK/FEEDBACK - TERHUBUNG KE DATABASE
+   ======================================== */
+
 const { createApp } = Vue;
 
 createApp({
@@ -5,132 +9,78 @@ createApp({
         return {
             isLoggedIn: false,
             currentUser: null,
-            logoutModalInstance: null,
+            isLoading: false,
             searchQuery: '',
-            form: {
-                nama: '',
-                email: '',
-                telepon: '',
-                pesan: ''
-            }
+            form: { nama: '', email: '', telepon: '', pesan: '' }
         }
     },
     mounted() {
         const status = localStorage.getItem('isLoggedIn');
-        const userData = localStorage.getItem('user_sementara');
+        const userData = localStorage.getItem('user_data');
 
         if (status === 'true' && userData) {
             this.isLoggedIn = true;
             this.currentUser = JSON.parse(userData);
-            this.form.nama = this.currentUser.username;
-            this.form.email = this.currentUser.email;
+            this.form.nama = this.currentUser.nama || '';
+            this.form.email = this.currentUser.email || '';
         }
     },
     methods: {
-        kirimPesan() {
+        async kirimPesan() {
             if (!this.form.nama || !this.form.pesan) {
                 Swal.fire({
-                    icon: 'warning',
-                    title: 'Data Belum Lengkap',
-                    text: 'Harap isi Nama dan Pesan Anda!',
-                    confirmButtonColor: '#1a5c7a'
+                    icon: 'warning', title: 'Data Belum Lengkap',
+                    text: 'Harap isi Nama dan Pesan Anda!', confirmButtonColor: '#1a5c7a'
                 });
                 return;
             }
 
-            let feedbackList = JSON.parse(localStorage.getItem('feedbackList')) || [];
-            let pesanBaru = {
-                id: Date.now(),
-                nama: this.form.nama,
-                email: this.form.email,
-                telepon: this.form.telepon,
-                pesan: this.form.pesan,
-                tanggal: new Date().toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                }),
-                jam: new Date().toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
-            };
+            this.isLoading = true;
+            try {
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nama: this.form.nama,
+                        email: this.form.email,
+                        telepon: this.form.telepon,
+                        pesan: this.form.pesan
+                    })
+                });
 
-            feedbackList.push(pesanBaru);
-            localStorage.setItem('feedbackList', JSON.stringify(feedbackList));
-
-            Swal.fire({
-                title: 'Pesan Terkirim!',
-                text: 'Terima kasih atas masukan dan dukungan Anda.',
-                icon: 'success',
-                confirmButtonColor: '#1a5c7a',
-                confirmButtonText: 'Sama-sama'
-            });
-
-            this.form.pesan = '';
-        },
-
-        showLogoutModal() {
-            const modalEl = document.getElementById('logoutModal');
-            this.logoutModalInstance = new bootstrap.Modal(modalEl);
-            this.logoutModalInstance.show();
-        },
-        confirmLogout() {
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('redirect_after_login');
-
-            // ✅ BERANDA LARAVEL
-            window.location.href = '/';
-        },
-
-        // --- SEARCH ---
-        performSearch() {
-            if (!this.searchQuery) return;
-
-            document.querySelectorAll('.highlight-text')
-                .forEach(el => { el.outerHTML = el.innerText; });
-
-            const term = this.searchQuery.trim();
-            if (term.length < 3) {
-                Swal.fire('Info', 'Kata kunci minimal 3 huruf', 'info');
-                return;
-            }
-
-            const content = document.querySelector('main');
-            const regex = new RegExp(`(${term})`, 'gi');
-            let found = false;
-
-            function highlightText(node) {
-                if (node.nodeType === 3 && regex.test(node.data)) {
-                    const span = document.createElement('span');
-                    span.innerHTML = node.data.replace(
-                        regex,
-                        '<span class="highlight-text">$1</span>'
-                    );
-                    node.parentNode.replaceChild(span, node);
-                    found = true;
-                } else if (
-                    node.nodeType === 1 &&
-                    node.childNodes &&
-                    !/(script|style)/i.test(node.tagName)
-                ) {
-                    node.childNodes.forEach(child => highlightText(child));
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    Swal.fire({
+                        title: 'Pesan Terkirim!',
+                        text: 'Terima kasih atas masukan dan dukungan Anda.',
+                        icon: 'success', confirmButtonColor: '#1a5c7a'
+                    });
+                    this.form.pesan = '';
+                } else {
+                    throw new Error(data.message || 'Gagal mengirim pesan');
                 }
+            } catch (error) {
+                Swal.fire('Error', error.message, 'error');
+            } finally {
+                this.isLoading = false;
             }
+        },
 
-            highlightText(content);
-
-            if (found) {
-                document
-                    .querySelector('.highlight-text')
-                    ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                Swal.fire(
-                    'Tidak Ditemukan',
-                    `Kata "${term}" tidak ada di halaman ini.`,
-                    'warning'
-                );
-            }
+        confirmLogout() {
+            Swal.fire({
+                title: 'Keluar?', text: 'Apakah Anda yakin ingin logout?', icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya, Logout'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_data');
+                    window.location.href = '/';
+                }
+            });
         }
     }
 }).mount('#kontakApp');

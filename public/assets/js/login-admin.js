@@ -1,55 +1,64 @@
-// ==========================================
-// 1. login-admin.js - FIXED FOR LARAVEL
-// ==========================================
-// File: public/assets/js/login-admin.js
-
 const { createApp } = Vue;
 
 createApp({
     data() {
         return {
-            username: '',
+            username: '', // ini sebenarnya email
             password: '',
             showPassword: false,
             isLoading: false
         }
     },
     methods: {
-        handleLogin() {
+        async handleLogin() {
             this.isLoading = true;
 
-            // Simulasi loading network
-            setTimeout(() => {
-                let adminData = JSON.parse(localStorage.getItem('adminAccount'));
-        
-                // Default Admin jika belum ada
-                if (!adminData) {
-                    adminData = { username: 'admin', password: '123' }; 
-                    localStorage.setItem('adminAccount', JSON.stringify(adminData));
-                }
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: this.username,
+                        password: this.password
+                    })
+                });
 
-                if (this.username === adminData.username && this.password === adminData.password) {
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Cek apakah user adalah admin
+                    if (data.data.user.role !== 'admin') {
+                        Swal.fire('Akses Ditolak', 'Anda bukan admin!', 'error');
+                        this.isLoading = false;
+                        return;
+                    }
+
+                    // Simpan token dan data user
+                    localStorage.setItem('adminLoggedIn', 'true');
+                    localStorage.setItem('admin_token', data.data.token);
+                    localStorage.setItem('admin_user', JSON.stringify(data.data.user));
+
                     Swal.fire({
-                        icon: 'success', 
-                        title: 'Login Berhasil', 
-                        text: 'Selamat Datang Admin!',
-                        timer: 1500, 
+                        icon: 'success',
+                        title: 'Login Berhasil',
+                        text: `Selamat Datang, ${data.data.user.nama}!`,
+                        timer: 1500,
                         showConfirmButton: false
                     }).then(() => {
-                        localStorage.setItem('adminLoggedIn', 'true');
-                        // FIXED: Redirect ke dashboard Laravel
-                        window.location.href = '/admin/dashboard'; 
+                        window.location.href = '/admin';
                     });
                 } else {
-                    Swal.fire('Akses Ditolak', 'Username atau Password salah!', 'error');
-                    this.isLoading = false;
+                    Swal.fire('Login Gagal', data.message || 'Email atau Password salah!', 'error');
                 }
-            }, 800);
+            } catch (error) {
+                console.error('Login error:', error);
+                Swal.fire('Error', 'Terjadi kesalahan koneksi. Coba lagi.', 'error');
+            } finally {
+                this.isLoading = false;
+            }
         }
     }
 }).mount('#loginApp');
-
-
-
-
-

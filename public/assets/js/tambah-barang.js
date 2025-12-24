@@ -1,6 +1,6 @@
-// ==========================================
-// tambah-barang.js - FIXED activePage
-// ==========================================
+/* ========================================
+   TAMBAH BARANG - FIXED
+   ======================================== */
 
 if (!localStorage.getItem('adminLoggedIn')) {
     window.location.href = '/admin/login';
@@ -8,142 +8,137 @@ if (!localStorage.getItem('adminLoggedIn')) {
 
 const { createApp } = window.Vue;
 
+// Mount ke #tambahBarangApp yang ada di view
 createApp({
     data() {
         return {
             showError: false, 
             previewImage: null, 
-            hasExpired: false,
+            hasExpired: false, 
+            isLoading: false,
             searchQuery: '', 
-            activePage: 'barang', // ✅ FIXED: ganti dari currentPage
+            activePage: 'barang', 
             unreadCount: 0, 
             currentUrl: window.location.href,
             form: {
-                kode: '', 
                 nama: '', 
                 kategori: '', 
-                satuan: '', 
-                stok_awal: '',
+                satuan: 'Pcs', 
+                stok: '',
                 kondisi: 'Baik', 
                 tgl_masuk_raw: '', 
                 expired_raw: ''
             }
         }
     },
-    watch: {
-        'form.kategori'() { this.generateKode(); }
-    },
     mounted() {
         console.log('✅ Tambah Barang Mounted!');
+        // Set tanggal default ke hari ini
+        this.form.tgl_masuk_raw = new Date().toISOString().split('T')[0];
     },
     methods: {
-        generateKode() {
-            const map = { 
-                'Sembako': 'SMB', 
-                'Obat-obatan': 'OBT', 
-                'Perlengkapan': 'PRL', 
-                'Alat Kesehatan': 'ALT' 
-            };
-            const prefix = map[this.form.kategori] || 'BRG';
-            const rand = Math.floor(100 + Math.random() * 900);
-            this.form.kode = `${prefix}-${rand}`;
-        },
-        
         handleFileUpload(e) {
             const file = e.target.files[0];
             if (file) this.previewImage = URL.createObjectURL(file);
         },
         
-        validateAndSubmit() {
-            if (!this.form.nama || !this.form.kategori || !this.form.satuan || 
-                !this.form.stok_awal || !this.form.tgl_masuk_raw) {
+        async validateAndSubmit() {
+            this.showError = false;
+            
+            // Validasi minimal - hanya nama yang wajib
+            if (!this.form.nama) {
                 this.showError = true;
                 Swal.fire({
                     icon: 'error',
-                    title: 'Form Belum Lengkap!',
-                    text: 'Mohon lengkapi semua field yang wajib diisi',
+                    title: 'Data Tidak Lengkap',
+                    text: 'Nama barang wajib diisi!',
                     confirmButtonColor: '#d33'
                 });
                 return;
             }
-            
-            if (this.hasExpired && !this.form.expired_raw) {
-                Swal.fire('Ups!', 'Tanggal expired wajib diisi', 'warning');
-                return;
-            }
-            
-            const stokAwal = Number(this.form.stok_awal);
-            if (isNaN(stokAwal) || stokAwal <= 0) {
-                Swal.fire('Error', 'Stok harus berupa angka > 0', 'error');
-                return;
-            }
-            
-            const d = new Date(this.form.tgl_masuk_raw);
-            const tglMasuk = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-            
-            let expired = null;
-            if (this.hasExpired) {
-                const e = new Date(this.form.expired_raw);
-                expired = `${String(e.getDate()).padStart(2,'0')}/${String(e.getMonth()+1).padStart(2,'0')}/${e.getFullYear()}`;
-            }
-            
-            const newItem = {
-                kode: this.form.kode, 
-                nama: this.form.nama, 
-                kategori: this.form.kategori,
-                satuan: this.form.satuan, 
-                kondisi: this.form.kondisi,
-                stok_awal: stokAwal, 
-                stok_keluar: 0, 
-                sisa_stok: stokAwal,
-                brg_masuk: `${stokAwal} ${this.form.satuan}`,
-                tgl_masuk: tglMasuk, 
-                expired: expired || '-', 
-                tgl_keluar: '-', 
-                brg_keluar: '-'
-            };
-            
-            Swal.fire({
+
+            const result = await Swal.fire({
                 title: 'Simpan Data Barang?', 
+                text: 'Pastikan data sudah benar',
                 icon: 'question', 
                 showCancelButton: true,
                 confirmButtonColor: '#1a5c7a',
                 cancelButtonColor: '#d33',
                 confirmButtonText: 'Ya, Simpan',
                 cancelButtonText: 'Batal'
-            }).then(res => {
-                if (!res.isConfirmed) return;
-                
-                const list = JSON.parse(localStorage.getItem('barangList')) || [];
-                list.push(newItem);
-                localStorage.setItem('barangList', JSON.stringify(list));
-                
-                // Save activity log
-                const logs = JSON.parse(localStorage.getItem('activityLog')) || [];
-                let jam = new Date().toLocaleString('id-ID', { 
-                    day: 'numeric', 
-                    month: 'short', 
-                    year: 'numeric', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-                logs.push({
-                    text: `Admin menambahkan barang: ${newItem.nama} (${stokAwal} ${newItem.satuan})`,
-                    time: jam
-                });
-                localStorage.setItem('activityLog', JSON.stringify(logs));
-                
-                console.log('💾 Barang saved!');
-                
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: 'Data barang berhasil ditambahkan',
-                    confirmButtonColor: '#1a5c7a'
-                }).then(() => {
-                    window.location.href = '/admin/data-barang';
-                });
             });
+
+            if (result.isConfirmed) {
+                this.isLoading = true;
+                
+                try {
+                    const token = localStorage.getItem('admin_token');
+                    
+                    // Siapkan data untuk dikirim
+                    const stokAwal = parseInt(this.form.stok) || 0;
+                    
+                    const dataToSend = {
+                        nama: this.form.nama,
+                        kategori: this.form.kategori || 'Lainnya',
+                        satuan: this.form.satuan || 'Pcs',
+                        brg_masuk: stokAwal,
+                        sisa_stok: stokAwal,
+                        tgl_masuk: this.form.tgl_masuk_raw || new Date().toISOString().split('T')[0],
+                        kondisi: this.form.kondisi || 'Baik'
+                    };
+                    
+                    // Tambahkan expired jika ada
+                    if (this.hasExpired && this.form.expired_raw) {
+                        dataToSend.expired = this.form.expired_raw;
+                    }
+
+                    console.log('Sending data:', dataToSend);
+
+                    const response = await fetch('/api/barang', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify(dataToSend)
+                    });
+
+                    const data = await response.json();
+                    
+                    console.log('Response:', data);
+
+                    if (response.ok && data.success) {
+                        Swal.fire({
+                            icon: 'success', 
+                            title: 'Berhasil!', 
+                            text: 'Data barang berhasil ditambahkan', 
+                            confirmButtonColor: '#1a5c7a'
+                        }).then(() => {
+                            window.location.href = '/admin/data-barang';
+                        });
+                    } else {
+                        let errorMsg = data.message || 'Gagal menyimpan data';
+                        if (data.errors) {
+                            errorMsg = Object.values(data.errors).flat().join('\n');
+                        }
+                        Swal.fire({ 
+                            icon: 'error', 
+                            title: 'Error', 
+                            text: errorMsg 
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({ 
+                        icon: 'error', 
+                        title: 'Error Koneksi', 
+                        text: 'Gagal terhubung ke server. Pastikan server Laravel berjalan.' 
+                    });
+                } finally {
+                    this.isLoading = false;
+                }
+            }
         },
         
         logoutAdmin() {
@@ -159,6 +154,7 @@ createApp({
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
+                    localStorage.removeItem('admin_token');
                     window.location.href = '/admin/login';
                 }
             });

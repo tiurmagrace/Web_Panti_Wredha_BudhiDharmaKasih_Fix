@@ -7,13 +7,11 @@
 @endpush
 
 @section('content')
-{{-- Vue mounting di sini (child app) --}}
-<div id="tambahBarangApp">
-    <div class="page-title-banner" style="background-color: #1a5c7a; color: white; padding: 15px; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px;">
-        Tambah Barang Baru
-    </div>
+<div class="page-title-banner" style="background-color: #1a5c7a; color: white; padding: 15px; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px;">
+    Tambah Barang Baru
+</div>
 
-    <div class="form-container">
+<div class="form-container">
         <div class="section-header-teal">Informasi Barang</div>
 
         <div class="form-group-row">
@@ -106,7 +104,6 @@
             Mohon lengkapi semua data barang (termasuk Kategori) terlebih dahulu!
         </div>
     </div>
-</div>
 @endsection
 
 @push('scripts')

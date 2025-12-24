@@ -1,13 +1,11 @@
 /* ========================================
-   TAMBAH PENGHUNI - JAVASCRIPT LOGIC (LARAVEL VERSION)
+   TAMBAH PENGHUNI - FIXED
    ======================================== */
 
-// Security Check - Redirect ke login jika belum login
 if (!localStorage.getItem('adminLoggedIn')) {
     window.location.href = '/admin/login';
 }
 
-// Inisialisasi Vue App
 const { createApp } = window.Vue;
 
 createApp({
@@ -16,9 +14,10 @@ createApp({
             step: 1,
             previewImage: null,
             unreadCount: 0,
-            activePage: 'penghuni',  // ✅ Fixed: ganti dari currentPage
-            searchQuery: '', // Required by header
+            activePage: 'penghuni',
+            searchQuery: '',
             currentUrl: window.location.href,
+            isLoading: false,
             form: {
                 nama: '', 
                 nik: '', 
@@ -32,17 +31,16 @@ createApp({
                 pj: '', 
                 hubungan: '', 
                 telp: '', 
-                alamat_pj: '',
+                alamat_pj: '', 
                 penyakit: '', 
                 kebutuhan: '', 
                 alergi: '', 
                 obat: '', 
-                status_sehat: '',
+                status_sehat: '', 
                 tgl_masuk: '', 
                 rujukan: '', 
                 catatan: '', 
                 paviliun: '', 
-                tahun: '', 
                 foto: null
             }
         }
@@ -53,18 +51,14 @@ createApp({
     },
     
     methods: {
-        // Next Step
         nextStep() { 
             this.step++;
-            console.log('📋 Move to step:', this.step);
         },
         
-        // Filter hanya angka untuk NIK dan Telepon
         filterAngka(field) {
             this.form[field] = this.form[field].replace(/[^0-9]/g, '');
         },
 
-        // Handle upload foto
         handleFileUpload(event) {
             const file = event.target.files[0];
             if (file) {
@@ -72,99 +66,103 @@ createApp({
                 reader.onload = (e) => {
                     this.previewImage = e.target.result;
                     this.form.foto = e.target.result;
-                    console.log('📸 Foto uploaded');
                 };
                 reader.readAsDataURL(file);
             }
         },
 
-        // Validasi dan Submit
-        validateAndSubmit() {
-            let errorMsg = '';
-
-            // Validasi field wajib
-            if (!this.form.nama || !this.form.kota || !this.form.tgl_masuk || !this.form.paviliun) {
-                errorMsg = "Data Wajib (Nama, Kota, Tgl Masuk, Paviliun) Belum Lengkap!";
-            } 
-            // Validasi NIK
-            else if (!this.form.nik || this.form.nik.length !== 16) {
-                errorMsg = "Format NIK Salah! Harus 16 digit angka.";
-            }
-            // Validasi Telepon
-            else if (!this.form.telp || this.form.telp.length < 10) {
-                errorMsg = "Nomor Telepon tidak valid (minimal 10 angka).";
-            }
-
-            // Tampilkan error jika ada
-            if (errorMsg) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Format Tidak Sesuai!',
-                    text: errorMsg,
-                    confirmButtonColor: '#d33'
+        async validateAndSubmit() {
+            // Validasi minimal - hanya nama yang wajib
+            if (!this.form.nama || this.form.nama.trim() === '') {
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: 'Data Tidak Lengkap', 
+                    text: 'Nama penghuni wajib diisi!', 
+                    confirmButtonColor: '#d33' 
                 });
                 return;
             }
 
-            // Extract tahun dari tanggal masuk
-            if(this.form.tgl_masuk) {
-                this.form.tahun = this.form.tgl_masuk.split('-')[0];
-            }
-
-            // Konfirmasi sebelum submit
-            Swal.fire({
-                title: 'Apakah Yakin <span style="color:#2ecc71">Menambah</span> Data',
-                icon: false, 
+            const result = await Swal.fire({
+                title: 'Simpan Data Penghuni?',
+                text: 'Pastikan data sudah benar',
+                icon: 'question',
                 showCancelButton: true, 
-                confirmButtonText: 'Ya', 
-                cancelButtonText: 'Tidak',
+                confirmButtonText: 'Ya, Simpan', 
+                cancelButtonText: 'Batal',
                 confirmButtonColor: '#1a5c7a', 
-                cancelButtonColor: '#1a5c7a', 
-                background: '#1a5c7a', 
-                color: 'white',
-                customClass: { 
-                    popup: 'border-radius-10', 
-                    title: 'text-white fw-bold fs-5', 
-                    confirmButton: 'px-4', 
-                    cancelButton: 'px-4' 
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Simpan data ke localStorage
-                    let dataLama = JSON.parse(localStorage.getItem('penghuniBaru')) || [];
-                    dataLama.push(this.form);
-                    localStorage.setItem('penghuniBaru', JSON.stringify(dataLama));
-                    
-                    console.log('💾 Data saved! Total penghuni:', dataLama.length);
-
-                    // Simpan log aktivitas
-                    let logs = JSON.parse(localStorage.getItem('activityLog')) || [];
-                    
-                    // Format waktu untuk log
-                    let jam = new Date().toLocaleString('id-ID', { 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric', 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                    });
-
-                    logs.push({ 
-                        text: `Admin menambahkan data penghuni baru: ${this.form.nama}`, 
-                        time: jam 
-                    });
-                    
-                    localStorage.setItem('activityLog', JSON.stringify(logs));
-                    console.log('📝 Activity log saved');
-                    
-                    // Redirect ke halaman kelola penghuni dengan parameter success
-                    console.log('🔄 Redirecting to kelola-penghuni...');
-                    window.location.href = '/admin/kelola-penghuni?status=success';
-                }
+                cancelButtonColor: '#d33'
             });
+
+            if (result.isConfirmed) {
+                this.isLoading = true;
+                
+                try {
+                    const token = localStorage.getItem('admin_token');
+                    
+                    // Siapkan data untuk dikirim - bersihkan field kosong
+                    const dataToSend = {};
+                    
+                    for (const [key, value] of Object.entries(this.form)) {
+                        // Skip field yang kosong atau null, kecuali nama
+                        if (value !== null && value !== '' && value !== undefined) {
+                            if (key === 'usia') {
+                                // Konversi usia ke integer
+                                dataToSend[key] = parseInt(value) || null;
+                            } else {
+                                dataToSend[key] = value;
+                            }
+                        }
+                    }
+
+                    const response = await fetch('/api/penghuni', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify(dataToSend)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        Swal.fire({ 
+                            icon: 'success', 
+                            title: 'Berhasil!', 
+                            text: 'Data penghuni berhasil ditambahkan', 
+                            timer: 1500, 
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.href = '/admin/kelola-penghuni?status=success';
+                        });
+                    } else {
+                        // Tampilkan error dari server dengan format yang lebih baik
+                        let errorMsg = data.message || 'Gagal menyimpan data';
+                        if (data.errors) {
+                            const errorList = Object.values(data.errors).flat();
+                            errorMsg = errorList.join(', ');
+                        }
+                        Swal.fire({ 
+                            icon: 'error', 
+                            title: 'Gagal Menyimpan', 
+                            text: errorMsg 
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({ 
+                        icon: 'error', 
+                        title: 'Error Koneksi', 
+                        text: 'Gagal terhubung ke server. Pastikan server Laravel berjalan.' 
+                    });
+                } finally {
+                    this.isLoading = false;
+                }
+            }
         },
 
-        // Logout Admin
         logoutAdmin() {
             Swal.fire({
                 title: 'Keluar?', 
@@ -173,11 +171,12 @@ createApp({
                 showCancelButton: true, 
                 confirmButtonColor: '#d33', 
                 cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Logout',
+                confirmButtonText: 'Ya, Logout', 
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
+                    localStorage.removeItem('admin_token');
                     window.location.href = '/admin/login';
                 }
             });

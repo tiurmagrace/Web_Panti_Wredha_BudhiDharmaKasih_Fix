@@ -1,7 +1,6 @@
-// ==========================================
-// 3. ambil-stok.js - FIXED MOUNTING
-// ==========================================
-// File: public/assets/js/ambil-stok.js
+/* ========================================
+   AMBIL STOK - TERHUBUNG KE DATABASE
+   ======================================== */
 
 if (!localStorage.getItem('adminLoggedIn')) {
     window.location.href = '/admin/login';
@@ -12,90 +11,112 @@ const { createApp } = window.Vue;
 createApp({
     data() {
         return {
-            selectedNamaBarang: '', stokTersediaDisplay: '', satuanBarang: '', stokAngka: 0,
-            barangList: [], searchQuery: '', currentPage: 'barang', unreadCount: 0, currentUrl: window.location.href,
+            selectedNamaBarang: '', selectedBarang: null,
+            barangList: [], searchQuery: '', activePage: 'barang', 
+            unreadCount: 0, currentUrl: window.location.href, isLoading: false,
             form: { jumlah: '', tanggal: '', keperluan: '', petugas: '' }
         }
     },
     computed: {
         availableItems() {
-            return this.barangList.filter(item => {
-                let sisa = 0;
-                if(item.sisa_stok) {
-                    let match = item.sisa_stok.toString().match(/(\d+)/);
-                    if(match) sisa = parseInt(match[0]);
-                }
-                return sisa > 0;
-            });
+            return this.barangList.filter(item => item.sisa_stok > 0);
+        },
+        stokTersediaDisplay() {
+            if (this.selectedBarang) {
+                return `${this.selectedBarang.sisa_stok} ${this.selectedBarang.satuan || ''}`;
+            }
+            return null;
+        },
+        satuanBarang() {
+            return this.selectedBarang ? this.selectedBarang.satuan : '';
         }
     },
     mounted() {
-        const data = JSON.parse(localStorage.getItem('barangList'));
-        if (data && data.length > 0) {
-            this.barangList = data;
-        } else {
-            this.barangList = [
-                { nama: 'Pampers uk. M', sisa_stok: '3 pack', tgl_masuk: '15/05/2025', expired: '-' }
-            ];
-            localStorage.setItem('barangList', JSON.stringify(this.barangList));
-        }
+        this.loadBarang();
     },
     methods: {
-        cekStok() {
-            const item = this.barangList.find(i => i.nama === this.selectedNamaBarang);
-            if (item) {
-                this.stokTersediaDisplay = item.sisa_stok;
-                const match = item.sisa_stok.toString().match(/(\d+)\s*(.*)/);
-                if(match) {
-                    this.stokAngka = parseInt(match[1]);
-                    this.satuanBarang = match[2];
-                } else {
-                    this.stokAngka = parseInt(item.sisa_stok) || 0;
-                    this.satuanBarang = '';
+        async loadBarang() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/barang', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.barangList = data.data;
                 }
-            } else {
-                this.stokTersediaDisplay = '-';
-                this.stokAngka = 0;
-                this.satuanBarang = '';
+            } catch (error) {
+                console.error('Error loading barang:', error);
             }
         },
-        submitAmbil() {
-            if (!this.selectedNamaBarang || !this.form.jumlah || !this.form.tanggal) {
-                Swal.fire('Error', 'Lengkapi semua data!', 'error'); 
+
+        cekStok() {
+            // Cari barang berdasarkan nama yang diinput
+            this.selectedBarang = this.barangList.find(i => 
+                i.nama && i.nama.toLowerCase() === this.selectedNamaBarang.toLowerCase()
+            );
+        },
+
+        async submitAmbil() {
+            // Validasi: pastikan barang sudah dipilih dengan benar
+            if (!this.selectedBarang) {
+                Swal.fire('Error', 'Pilih barang yang valid dari daftar!', 'error'); 
                 return;
             }
-            if (parseInt(this.form.jumlah) > this.stokAngka) {
-                Swal.fire('Stok Kurang!', `Hanya tersedia ${this.stokAngka} ${this.satuanBarang}`, 'error'); 
+            if (!this.form.jumlah || !this.form.tanggal) {
+                Swal.fire('Error', 'Lengkapi jumlah dan tanggal!', 'error'); 
                 return;
             }
-            Swal.fire({
+
+            if (parseInt(this.form.jumlah) > this.selectedBarang.sisa_stok) {
+                Swal.fire('Stok Kurang!', `Hanya tersedia ${this.selectedBarang.sisa_stok} ${this.selectedBarang.satuan}`, 'error'); 
+                return;
+            }
+
+            const result = await Swal.fire({
                 title: 'Keluarkan Barang?', icon: 'warning', showCancelButton: true,
                 confirmButtonText: 'Ya', confirmButtonColor: '#21698a'
-            }).then((r) => {
-                if(r.isConfirmed) {
-                    const index = this.barangList.findIndex(i => i.nama === this.selectedNamaBarang);
-                    if(index !== -1) {
-                        let sisaBaru = this.stokAngka - parseInt(this.form.jumlah);
-                        let formatSisa = `${sisaBaru} ${this.satuanBarang}`.trim();
-                        this.barangList[index].sisa_stok = formatSisa;
-                        let d = new Date(this.form.tanggal);
-                        let tglKeluar = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-                        this.barangList[index].tgl_keluar = tglKeluar;
-                        this.barangList[index].brg_keluar = `${this.form.jumlah} ${this.satuanBarang}`;
-                        localStorage.setItem('barangList', JSON.stringify(this.barangList));
-                        let logs = JSON.parse(localStorage.getItem('activityLog')) || [];
-                        logs.push({ 
-                            text: `Admin mengeluarkan stok: ${this.selectedNamaBarang} (${this.form.jumlah} ${this.satuanBarang}) - ${this.form.keperluan}`, 
-                            time: new Date() 
-                        });
-                        localStorage.setItem('activityLog', JSON.stringify(logs));
+            });
+
+            if (result.isConfirmed) {
+                this.isLoading = true;
+                try {
+                    const token = localStorage.getItem('admin_token');
+                    const response = await fetch('/api/barang/ambil-stok', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify({
+                            barang_id: this.selectedBarang.id,
+                            jumlah: parseInt(this.form.jumlah),
+                            tanggal: this.form.tanggal,
+                            keperluan: this.form.keperluan || '-',
+                            petugas: this.form.petugas || '-'
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok && data.success) {
                         Swal.fire('Berhasil!', 'Barang berhasil dikeluarkan.', 'success').then(() => {
                             window.location.href = '/admin/data-barang';
                         });
+                    } else {
+                        throw new Error(data.message || 'Gagal mengambil stok');
                     }
+                } catch (error) {
+                    Swal.fire('Error', error.message, 'error');
+                } finally {
+                    this.isLoading = false;
                 }
-            });
+            }
         },
+
         logoutAdmin() {
             Swal.fire({
                 title: 'Keluar?', text: "Sesi admin akan diakhiri.", icon: 'warning',
@@ -104,6 +125,7 @@ createApp({
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
+                    localStorage.removeItem('admin_token');
                     window.location.href = '/admin/login';
                 }
             });

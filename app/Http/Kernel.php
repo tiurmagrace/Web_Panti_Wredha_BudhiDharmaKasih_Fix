@@ -61,5 +61,6 @@ class Kernel extends HttpKernel
 
         // 🔥 TAMBAHAN KITA (ADMIN)
         'admin.auth' => \App\Http\Middleware\AdminAuth::class,
+        'admin' => \App\Http\Middleware\AdminMiddleware::class,
     ];
 }

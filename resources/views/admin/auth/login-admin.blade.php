@@ -17,8 +17,8 @@
             
             <form @submit.prevent="handleLogin">
                 <div class="input-group mb-3">
-                    <span class="input-group-text"><i class="fas fa-user"></i></span>
-                    <input type="text" class="form-control form-control-auth" v-model="username" placeholder="Username" required>
+                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                    <input type="email" class="form-control form-control-auth" v-model="username" placeholder="Email Admin" required>
                 </div>
                 
                 <div class="input-group mb-2">
