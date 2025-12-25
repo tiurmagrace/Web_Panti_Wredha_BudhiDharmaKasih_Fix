@@ -52,10 +52,12 @@
                 </select>
             </div>
             <div class="col-md-3 mb-3">
-                <label class="filter-label"><i class="fas fa-user-tie me-1"></i> Nama Petugas</label>
-                <select v-model="filterPetugas" class="filter-select">
-                    <option value="">Semua Petugas</option>
-                    <option v-for="petugas in uniquePetugas" :key="petugas" :value="petugas">@{{ formatTitleCase(petugas) }}</option>
+                <label class="filter-label"><i class="fas fa-check-circle me-1"></i> Verifikasi</label>
+                <select v-model="filterVerifikasi" class="filter-select">
+                    <option value="">Semua</option>
+                    <option value="pending">Menunggu</option>
+                    <option value="approved">Disetujui</option>
+                    <option value="rejected">Ditolak</option>
                 </select>
             </div>
             <div class="col-md-3 mb-3 d-flex align-items-end">
@@ -73,6 +75,13 @@
                 <label class="filter-label"><i class="fas fa-calendar-alt me-1"></i> Sampai Tanggal</label>
                 <input type="date" v-model="filterTanggalSelesai" class="filter-input">
             </div>
+            <div class="col-md-3 mb-3">
+                <label class="filter-label"><i class="fas fa-user-tie me-1"></i> Nama Petugas</label>
+                <select v-model="filterPetugas" class="filter-select">
+                    <option value="">Semua Petugas</option>
+                    <option v-for="petugas in uniquePetugas" :key="petugas" :value="petugas">@{{ formatTitleCase(petugas) }}</option>
+                </select>
+            </div>
         </div>
         
         {{-- Active Filters Badge --}}
@@ -81,6 +90,7 @@
             <div class="mt-2">
                 <span v-if="filterJenis" class="active-filter-badge">Jenis: @{{ formatTitleCase(filterJenis) }}</span>
                 <span v-if="filterStatus" class="active-filter-badge">Status: @{{ formatTitleCase(filterStatus) }}</span>
+                <span v-if="filterVerifikasi" class="active-filter-badge">Verifikasi: @{{ formatTitleCase(filterVerifikasi) }}</span>
                 <span v-if="filterPetugas" class="active-filter-badge">Petugas: @{{ formatTitleCase(filterPetugas) }}</span>
                 <span v-if="filterTanggalMulai || filterTanggalSelesai" class="active-filter-badge">
                     Tanggal: @{{ filterTanggalMulai || '...' }} s/d @{{ filterTanggalSelesai || '...' }}
@@ -101,24 +111,59 @@
                     <th>Detail Bantuan</th>
                     <th>Jumlah</th>
                     <th>Status</th>
-                    <th>Petugas</th>
+                    <th>Verifikasi</th>
                     <th class="text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-for="(item, index) in paginatedList" :key="index">
                     <td>@{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
-                    <td>@{{ item.tanggal }}</td>
+                    <td>@{{ formatTanggal(item.tanggal) }}</td>
                     <td>@{{ formatTitleCase(item.donatur) }}</td>
                     <td>@{{ formatTitleCase(item.jenis) }}</td>
                     <td>@{{ formatTitleCase(item.detail) }}</td>
                     <td>@{{ item.jumlah }}</td>
                     <td>@{{ formatTitleCase(item.status) }}</td>
-                    <td>@{{ formatTitleCase(item.petugas) }}</td>
+                    <td>
+                        <span v-if="item.status_verifikasi === 'approved'" class="badge bg-success">
+                            <i class="fas fa-check me-1"></i> Disetujui
+                        </span>
+                        <span v-else-if="item.status_verifikasi === 'rejected'" class="badge bg-danger">
+                            <i class="fas fa-times me-1"></i> Ditolak
+                        </span>
+                        <span v-else class="badge bg-warning text-dark">
+                            <i class="fas fa-clock me-1"></i> Menunggu
+                        </span>
+                    </td>
                     <td>
                         <div class="d-flex gap-2 justify-content-center">
+                            {{-- Tombol Verifikasi (hanya untuk pending) --}}
+                            <button v-if="item.status_verifikasi === 'pending'" 
+                                    @click="verifyDonasi(item, 'approved')" 
+                                    class="btn btn-sm btn-success" 
+                                    title="Setujui">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button v-if="item.status_verifikasi === 'pending'" 
+                                    @click="verifyDonasi(item, 'rejected')" 
+                                    class="btn btn-sm btn-danger" 
+                                    title="Tolak">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            {{-- Tombol Kirim Terima Kasih (hanya untuk approved) --}}
+                            <button v-if="item.status_verifikasi === 'approved' && item.user_id" 
+                                    @click="sendThankYou(item)" 
+                                    class="btn btn-sm btn-info" 
+                                    title="Kirim Ucapan Terima Kasih">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                            {{-- Tombol Edit --}}
                             <button @click="goToEditPage(item)" class="btn-action-custom" title="Edit/Detail">
                                 <i class="fas fa-file-invoice"></i>
+                            </button>
+                            {{-- Tombol Hapus --}}
+                            <button @click="deleteDonasi(item)" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </div>
                     </td>
@@ -149,5 +194,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/js/kelola-donasi.js') }}"></script>
+<script src="{{ asset('assets/js/kelola-donasi.js') }}?v={{ time() }}"></script>
 @endpush

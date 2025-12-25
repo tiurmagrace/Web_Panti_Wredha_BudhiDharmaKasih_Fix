@@ -1,3 +1,7 @@
+/* ========================================
+   NOTIFIKASI DONATUR - TERHUBUNG KE DATABASE
+   ======================================== */
+
 const { createApp } = Vue;
 
 createApp({
@@ -5,8 +9,22 @@ createApp({
         return {
             isLoggedIn: false,
             currentUser: null,
-            searchQuery: ''
+            searchQuery: '',
+            notifications: [],
+            unreadCount: 0,
+            isLoading: false
         };
+    },
+
+    computed: {
+        filteredNotifications() {
+            if (!this.searchQuery) return this.notifications;
+            const query = this.searchQuery.toLowerCase();
+            return this.notifications.filter(n => 
+                (n.title && n.title.toLowerCase().includes(query)) ||
+                (n.text && n.text.toLowerCase().includes(query))
+            );
+        }
     },
 
     mounted() {
@@ -14,21 +32,14 @@ createApp({
     },
 
     methods: {
-        // ===============================
-        // 🔒 AUTH CHECK (WAJIB)
-        // ===============================
         checkAuth() {
+            // Cek dengan key yang benar sesuai login-donatur.js
             const status = localStorage.getItem('isLoggedIn');
-            const userData = localStorage.getItem('user_sementara');
+            const token = localStorage.getItem('auth_token');
+            const userData = localStorage.getItem('user_data');
 
-            // ❌ BELUM LOGIN
-            if (status !== 'true' || !userData) {
-                // simpan tujuan
-                localStorage.setItem(
-                    'redirect_after_login',
-                    '/donatur/notifikasi'
-                );
-
+            if (status !== 'true' || !token || !userData) {
+                localStorage.setItem('redirect_after_login', '/donatur/notifikasi');
                 Swal.fire({
                     icon: 'info',
                     title: 'Login Diperlukan',
@@ -37,67 +48,122 @@ createApp({
                 }).then(() => {
                     window.location.href = '/auth/login';
                 });
-
                 return;
             }
 
-            // ✅ SUDAH LOGIN
             this.isLoggedIn = true;
             this.currentUser = JSON.parse(userData);
+            this.loadNotifications();
         },
 
-        // ===============================
-        // 🔍 SEARCH DI HALAMAN
-        // ===============================
-        performSearch() {
-            if (!this.searchQuery) return;
-
-            // bersihkan highlight lama
-            document.querySelectorAll('.highlight-text')
-                .forEach(el => el.outerHTML = el.innerText);
-
-            const term = this.searchQuery.trim();
-            if (term.length < 3) {
-                Swal.fire('Info', 'Kata kunci minimal 3 huruf', 'info');
-                return;
-            }
-
-            const content = document.querySelector('main');
-            if (!content) return;
-
-            const regex = new RegExp(`(${term})`, 'gi');
-            let found = false;
-
-            function highlight(node) {
-                if (node.nodeType === 3 && regex.test(node.data)) {
-                    const span = document.createElement('span');
-                    span.innerHTML = node.data.replace(
-                        regex,
-                        '<span class="highlight-text">$1</span>'
-                    );
-                    node.parentNode.replaceChild(span, node);
-                    found = true;
-                } else if (
-                    node.nodeType === 1 &&
-                    node.childNodes &&
-                    !/(script|style)/i.test(node.tagName)
-                ) {
-                    node.childNodes.forEach(child => highlight(child));
+        async loadNotifications() {
+            this.isLoading = true;
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch('/api/notifikasi', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.notifications = data.data;
+                    this.unreadCount = this.notifications.filter(n => n.status === 'unread').length;
                 }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            } finally {
+                this.isLoading = false;
             }
+        },
 
-            highlight(content);
+        formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        },
 
-            if (found) {
-                document.querySelector('.highlight-text')
-                    ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                Swal.fire(
-                    'Tidak Ditemukan',
-                    `Kata "${term}" tidak ada di halaman ini.`,
-                    'warning'
-                );
+        getNotifIcon(type) {
+            const icons = {
+                'donasi_diterima': 'fa-check-circle text-success',
+                'donasi_ditolak': 'fa-times-circle text-danger',
+                'ucapan_terimakasih': 'fa-heart text-danger',
+                'donasi': 'fa-hand-holding-heart text-primary'
+            };
+            return icons[type] || 'fa-bell text-secondary';
+        },
+
+        async markAsRead(notif) {
+            if (notif.status === 'read') return;
+            
+            try {
+                const token = localStorage.getItem('auth_token');
+                await fetch(`/api/notifikasi/${notif.id}/mark-as-read`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                notif.status = 'read';
+                this.unreadCount = this.notifications.filter(n => n.status === 'unread').length;
+            } catch (error) {
+                console.error('Error:', error);
             }
+        },
+
+        async markAllAsRead() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                await fetch('/api/notifikasi/mark-all-as-read', {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                this.notifications.forEach(n => n.status = 'read');
+                this.unreadCount = 0;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        },
+
+        showNotifDetail(notif) {
+            this.markAsRead(notif);
+            Swal.fire({
+                title: notif.title,
+                html: `<p style="text-align: left;">${notif.text}</p>
+                       <small class="text-muted">${this.formatDate(notif.created_at)}</small>`,
+                confirmButtonColor: '#1a5c7a'
+            });
+        },
+
+        logout() {
+            Swal.fire({
+                title: 'Logout?',
+                text: 'Anda yakin ingin keluar?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Logout',
+                cancelButtonText: 'Batal'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_data');
+                    window.location.href = '/';
+                }
+            });
         }
     }
 }).mount('#notifikasiApp');

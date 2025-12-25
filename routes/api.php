@@ -28,6 +28,12 @@ Route::prefix('auth')->group(function () {
 // Feedback public (bisa dari guest)
 Route::post('/feedback', [FeedbackController::class, 'store']);
 
+// Public Donasi Routes (untuk mobile tanpa login)
+Route::prefix('donasi')->group(function () {
+    Route::get('/public', [DonasiController::class, 'publicList']);
+    Route::get('/public/statistics', [DonasiController::class, 'publicStatistics']);
+});
+
 /*
 |--------------------------------------------------------------------------
 | PROTECTED ROUTES (Perlu Auth)
@@ -60,18 +66,24 @@ Route::middleware('auth:sanctum')->group(function () {
     |----------------------------------------------------------------------
     */
     Route::prefix('donasi')->group(function () {
-        // Public untuk semua authenticated users
+        // User authenticated - bisa submit donasi dan lihat riwayat
         Route::get('/my-donations', [DonasiController::class, 'myDonations']);
         Route::post('/', [DonasiController::class, 'store']);
         
         // Admin only
         Route::middleware('admin')->group(function () {
             Route::get('/', [DonasiController::class, 'index']);
-            Route::get('/statistics', [DonasiController::class, 'statistics']);
-            Route::get('/{id}', [DonasiController::class, 'show']);
+            Route::get('/admin/pending', [DonasiController::class, 'pending']);
+            Route::get('/admin/statistics', [DonasiController::class, 'statistics']);
+            Route::post('/admin/store', [DonasiController::class, 'storeByAdmin']);
+            Route::patch('/{id}/verify', [DonasiController::class, 'verify']);
+            Route::post('/{id}/thank-you', [DonasiController::class, 'sendThankYou']);
             Route::put('/{id}', [DonasiController::class, 'update']);
             Route::delete('/{id}', [DonasiController::class, 'destroy']);
         });
+        
+        // Route show harus di bawah agar tidak menangkap route lain
+        Route::get('/{id}', [DonasiController::class, 'show']);
     });
 
     /*

@@ -1,7 +1,6 @@
-// ==========================================
-// 1. notifikasi.js - FIXED FOR LARAVEL
-// ==========================================
-// File: public/assets/js/notifikasi.js
+/* ========================================
+   NOTIFIKASI ADMIN - TERHUBUNG KE DATABASE
+   ======================================== */
 
 if (!localStorage.getItem('adminLoggedIn')) {
     window.location.href = '/admin/login';
@@ -12,8 +11,12 @@ const { createApp } = window.Vue;
 createApp({
     data() {
         return {
-            searchQuery: '', filterType: '', notifications: [],
-            currentUrl: window.location.href, unreadCount: 0
+            searchQuery: '', 
+            filterType: '', 
+            notifications: [],
+            currentUrl: window.location.href, 
+            unreadCount: 0,
+            isLoading: false
         }
     },
     computed: {
@@ -21,8 +24,7 @@ createApp({
             return this.notifications.filter(item => {
                 const query = this.searchQuery.toLowerCase();
                 const allText = (
-                    (item.title || '') + ' ' + (item.text || '') + ' ' + 
-                    (item.type || '') + ' ' + (item.dateDisplay || '')
+                    (item.title || '') + ' ' + (item.text || '') + ' ' + (item.type || '')
                 ).toLowerCase();
                 const matchSearch = allText.includes(query);
                 const matchFilter = this.filterType ? item.type === this.filterType : true;
@@ -31,57 +33,150 @@ createApp({
         }
     },
     mounted() {
-        localStorage.setItem('lastReadTimestamp', Date.now());
-        this.loadAllNotifications();
+        console.log('✅ Notifikasi Admin Mounted!');
+        this.loadNotifications();
     },
     methods: {
-        formatDate(timestamp) {
-            if (!timestamp) return '-';
-            const date = new Date(timestamp);
-            return date.toLocaleDateString('id-ID') + ' ' + 
-                   date.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
-        },
-        dateToTimestamp(dateStr) {
-            if (!dateStr || dateStr === '-') return 0;
-            const parts = dateStr.split('/');
-            if (parts.length === 3) {
-                return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
-            }
-            return 0;
-        },
-        loadAllNotifications() {
-            let allNotifs = [];
-            const donasiList = JSON.parse(localStorage.getItem('donasiList')) || [];
-            donasiList.forEach(d => {
-                let time = d.id || this.dateToTimestamp(d.tanggal);
-                allNotifs.push({
-                    title: 'Donasi Masuk',
-                    text: `Diterima dari ${d.donatur} berupa ${d.jenis} (${d.detail || d.jumlah}).`,
-                    type: 'donasi', timestamp: time, dateDisplay: this.formatDate(time)
+        async loadNotifications() {
+            this.isLoading = true;
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/notifikasi', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
                 });
-            });
-            const barangList = JSON.parse(localStorage.getItem('barangList')) || [];
-            barangList.forEach(b => {
-                let stok = parseInt(b.sisa_stok);
-                if (!isNaN(stok) && stok < 5) {
-                    let time = this.dateToTimestamp(b.tgl_masuk);
-                    allNotifs.push({
-                        title: 'Stok Menipis',
-                        text: `Stok barang "${b.nama}" tersisa ${b.sisa_stok}. Segera restock!`,
-                        type: 'stok', timestamp: time, dateDisplay: b.tgl_masuk
-                    });
+                const data = await response.json();
+                if (data.success) {
+                    this.notifications = data.data.map(n => ({
+                        ...n,
+                        dateDisplay: this.formatDate(n.created_at || n.date)
+                    }));
+                    this.unreadCount = this.notifications.filter(n => n.status === 'unread').length;
                 }
-            });
-            this.notifications = allNotifs.sort((a, b) => b.timestamp - a.timestamp);
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            } finally {
+                this.isLoading = false;
+            }
         },
+
+        formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        },
+
+        getTypeLabel(type) {
+            const labels = {
+                'donasi_masuk': 'Donasi Masuk',
+                'donasi': 'Donasi',
+                'stok_menipis': 'Stok Menipis',
+                'stok': 'Stok',
+                'hampir_kadaluarsa': 'Hampir Kadaluarsa',
+                'kadaluarsa': 'Kadaluarsa',
+                'penghuni': 'Penghuni',
+                'system': 'Sistem'
+            };
+            return labels[type] || type;
+        },
+
+        getTypeClass(type) {
+            if (type.includes('donasi')) return 'badge-donasi';
+            if (type.includes('stok') || type.includes('kadaluarsa')) return 'badge-stok';
+            if (type.includes('penghuni')) return 'badge-penghuni';
+            return 'badge-system';
+        },
+
+        async markAsRead(notif) {
+            if (notif.status === 'read') return;
+            
+            try {
+                const token = localStorage.getItem('admin_token');
+                await fetch(`/api/notifikasi/${notif.id}/mark-as-read`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                notif.status = 'read';
+                this.unreadCount = this.notifications.filter(n => n.status === 'unread').length;
+            } catch (error) {
+                console.error('Error marking as read:', error);
+            }
+        },
+
+        async markAllAsRead() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                await fetch('/api/notifikasi/mark-all-as-read', {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                this.notifications.forEach(n => n.status = 'read');
+                this.unreadCount = 0;
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Semua notifikasi ditandai sudah dibaca',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        },
+
+        async deleteNotif(notif) {
+            const result = await Swal.fire({
+                title: 'Hapus Notifikasi?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Ya, Hapus'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const token = localStorage.getItem('admin_token');
+                    await fetch(`/api/notifikasi/${notif.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        }
+                    });
+                    this.notifications = this.notifications.filter(n => n.id !== notif.id);
+                    this.unreadCount = this.notifications.filter(n => n.status === 'unread').length;
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        },
+
         logoutAdmin() {
             Swal.fire({
-                title: 'Keluar?', text: "Sesi admin akan diakhiri.", icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6',
+                title: 'Keluar?', 
+                text: "Sesi admin akan diakhiri.", 
+                icon: 'warning',
+                showCancelButton: true, 
+                confirmButtonColor: '#d33', 
+                cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Ya, Logout'
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
+                    localStorage.removeItem('admin_token');
                     window.location.href = '/admin/login';
                 }
             });

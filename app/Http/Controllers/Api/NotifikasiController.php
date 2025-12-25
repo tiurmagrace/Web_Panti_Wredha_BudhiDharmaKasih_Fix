@@ -23,6 +23,12 @@ class NotifikasiController extends Controller
         // Jika user adalah donatur, hanya tampilkan notifikasi mereka
         if (auth()->check() && auth()->user()->isDonatur()) {
             $query->where('user_id', auth()->id());
+        } else {
+            // Admin: tampilkan notifikasi untuk admin (user_id = null) dan notifikasi umum
+            $query->where(function($q) {
+                $q->whereNull('user_id')
+                  ->orWhere('user_id', auth()->id());
+            });
         }
 
         $notifikasi = $query->orderBy('created_at', 'desc')->get();
@@ -39,6 +45,12 @@ class NotifikasiController extends Controller
 
         if (auth()->check() && auth()->user()->isDonatur()) {
             $query->where('user_id', auth()->id());
+        } else {
+            // Admin
+            $query->where(function($q) {
+                $q->whereNull('user_id')
+                  ->orWhere('user_id', auth()->id());
+            });
         }
 
         return response()->json([
@@ -76,10 +88,16 @@ class NotifikasiController extends Controller
 
     public function markAllAsRead()
     {
-        $query = Notifikasi::unread();
+        $query = Notifikasi::where('status', 'unread');
 
         if (auth()->user()->isDonatur()) {
             $query->where('user_id', auth()->id());
+        } else {
+            // Admin
+            $query->where(function($q) {
+                $q->whereNull('user_id')
+                  ->orWhere('user_id', auth()->id());
+            });
         }
 
         $query->update(['status' => 'read']);

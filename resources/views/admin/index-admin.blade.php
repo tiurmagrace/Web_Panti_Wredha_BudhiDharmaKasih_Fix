@@ -17,7 +17,7 @@
     </div>
     <div class="col-md-4">
         <div class="custom-card">
-            <h2>Rp. @{{ formatRupiah(totalUang) }}</h2>
+            <h2>@{{ donasiTunaiBulanIni }} Donasi</h2>
             <p class="card-label">Donasi Tunai Bulan Ini</p>
         </div>
     </div>
@@ -38,8 +38,12 @@
     <div class="col-md-6">
         <div class="info-box-middle">
             <div class="info-box-content">
-                <div>💸 Uang Tunai : Rp @{{ formatRupiah(totalUang) }}</div>
-                <div>🎁 Barang : @{{ totalBarang }} Item</div>
+                <div>💸 Donasi Tunai : @{{ totalDonasiTunai }} Total</div>
+                <div>🎁 Donasi Barang : @{{ totalDonasiBarang }} Item</div>
+                <div v-if="pendingDonasi > 0" style="margin-top: 5px; cursor: pointer;" @click="goToPendingDonasi">
+                    <span style="color: #ffeb3b;">⏳ Menunggu Verifikasi : @{{ pendingDonasi }}</span>
+                    <small style="color: #aaa;">(klik untuk lihat)</small>
+                </div>
             </div>
             <div class="info-box-footer">Total Donasi Masuk (Realtime)</div>
         </div>
@@ -77,7 +81,7 @@
         <tbody>
             <tr v-for="item in filteredFeedbacks" :key="item.id" @click="showFullMessage(item)">
                 <td>@{{ item.nama }}</td>
-                <td>@{{ item.tanggal }}</td>
+                <td>@{{ formatDate(item.tanggal) }}</td>
                 <td>@{{ truncateText(item.pesan, 50) }}</td>
             </tr>
         </tbody>
@@ -106,7 +110,7 @@
         <ol v-else>
             <li v-for="(act, index) in filteredActivities" :key="index" class="mb-1">
                 @{{ act.text }} 
-                <span style="font-size: 0.75rem; color: #888;">(@{{ act.time }})</span>
+                <span style="font-size: 0.75rem; color: #888;">(@{{ formatDate(act.time) }})</span>
             </li>
         </ol>
         <div v-if="searchQuery && filteredActivities.length === 0" class="text-center text-muted small">
@@ -121,18 +125,21 @@
 
     {{-- Notification Panel --}}
     <div class="panel-box">
-        <h5>NOTIFIKASI TERBARU</h5>
-        <div v-if="notifications.length === 0" class="text-muted fst-italic">
+        <h5>NOTIFIKASI TERBARU <span v-if="unreadCount > 0" class="badge bg-danger">@{{ unreadCount }}</span></h5>
+        <div v-if="displayedNotifications.length === 0" class="text-muted fst-italic">
             Belum ada notifikasi baru.
         </div>
         <ol v-else>
-            <li v-for="(notif, index) in filteredNotifications" :key="index" class="mb-2">
-                <span v-if="notif.type === 'donasi'" style="color: #27ae60;">🟢</span> 
-                <span v-else-if="notif.type === 'stok'" style="color: #e67e22;">🟠</span>
-                @{{ notif.text }} 
+            <li v-for="(notif, index) in displayedNotifications" :key="notif.id" class="mb-2" 
+                :style="{ opacity: notif.status === 'read' ? 0.7 : 1 }"
+                @click="markNotifAsRead(notif)" style="cursor: pointer;">
+                <span v-if="notif.type && notif.type.includes('donasi')" style="color: #27ae60;">🟢</span> 
+                <span v-else-if="notif.type && (notif.type.includes('stok') || notif.type.includes('kadaluarsa'))" style="color: #e67e22;">🟠</span>
+                <span v-else style="color: #3498db;">🔵</span>
+                @{{ notif.title }}: @{{ truncateText(notif.text, 40) }}
             </li>
         </ol>
-        <div v-if="searchQuery && filteredNotifications.length === 0" class="text-center text-muted small">
+        <div v-if="searchQuery && displayedNotifications.length === 0" class="text-center text-muted small">
             Tidak ada notifikasi "@{{ searchQuery }}"
         </div>
         <div class="dst-mark" v-if="notifications.length > 5">

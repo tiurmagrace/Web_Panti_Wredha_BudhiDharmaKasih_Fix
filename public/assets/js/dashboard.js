@@ -11,12 +11,30 @@ const { createApp } = window.Vue;
 createApp({
     data() {
         return {
-            searchQuery: '', notifications: [], displayedNotifications: [],
-            unreadCount: 0, activities: [], feedbacks: [],
-            totalPenghuni: 0, totalUang: 0, totalBarang: 0, totalStok: 0,
-            stokMenipis: 0, jumlahHampirExpired: 0,
-            totalSembako: 0, totalPakaian: 0, totalObat: 0,
-            currentUrl: window.location.href, activePage: 'dashboard',
+            searchQuery: '', 
+            notifications: [], 
+            displayedNotifications: [],
+            unreadCount: 0, 
+            activities: [], 
+            feedbacks: [],
+            // Statistik Penghuni
+            totalPenghuni: 0,
+            // Statistik Donasi
+            totalDonasiTunai: 0,
+            totalDonasiBarang: 0,
+            donasiTunaiBulanIni: 0,
+            donasiBarangBulanIni: 0,
+            totalSembako: 0, 
+            totalPakaian: 0, 
+            totalObat: 0,
+            pendingDonasi: 0,
+            // Statistik Barang/Stok
+            totalStok: 0,
+            stokMenipis: 0, 
+            jumlahHampirExpired: 0,
+            // UI
+            currentUrl: window.location.href, 
+            activePage: 'dashboard',
             isLoading: false
         }
     },
@@ -40,61 +58,55 @@ createApp({
     mounted() {
         console.log('✅ Dashboard Mounted!');
         this.loadAllData();
-        setInterval(() => this.loadAllData(), 30000); // Refresh setiap 30 detik
+        // Refresh setiap 60 detik (lebih lama agar tidak berat)
+        setInterval(() => this.loadAllData(), 60000);
     },
     methods: {
         async loadAllData() {
             this.isLoading = true;
             const token = localStorage.getItem('admin_token');
-            const headers = { 'Accept': 'application/json', 'Authorization': 'Bearer ' + token };
+            const headers = { 
+                'Accept': 'application/json', 
+                'Authorization': 'Bearer ' + token 
+            };
 
             try {
-                // Load Penghuni Statistics
-                const penghuniRes = await fetch('/api/penghuni/statistics', { headers });
-                const penghuniData = await penghuniRes.json();
+                // Load data penting dulu (parallel)
+                const [penghuniRes, donasiRes, barangRes] = await Promise.all([
+                    fetch('/api/penghuni/statistics', { headers }),
+                    fetch('/api/donasi/admin/statistics', { headers }),
+                    fetch('/api/barang/statistics', { headers })
+                ]);
+
+                const [penghuniData, donasiData, barangData] = await Promise.all([
+                    penghuniRes.json(),
+                    donasiRes.json(),
+                    barangRes.json()
+                ]);
+
+                // Penghuni Statistics
                 if (penghuniData.success) {
                     this.totalPenghuni = penghuniData.data.total || 0;
                 }
 
-                // Load Donasi Statistics
-                const donasiRes = await fetch('/api/donasi/statistics', { headers });
-                const donasiData = await donasiRes.json();
+                // Donasi Statistics
                 if (donasiData.success) {
-                    this.totalUang = donasiData.data.total_tunai || 0;
-                    this.totalBarang = donasiData.data.total_barang || 0;
+                    this.totalDonasiTunai = donasiData.data.total_tunai || 0;
+                    this.totalDonasiBarang = donasiData.data.total_barang || 0;
+                    this.donasiTunaiBulanIni = donasiData.data.tunai_bulan_ini || 0;
+                    this.donasiBarangBulanIni = donasiData.data.barang_bulan_ini || 0;
+                    this.pendingDonasi = donasiData.data.pending || 0;
                 }
 
-                // Load Barang Statistics
-                const barangRes = await fetch('/api/barang/statistics', { headers });
-                const barangData = await barangRes.json();
+                // Barang Statistics
                 if (barangData.success) {
                     this.totalStok = barangData.data.total || 0;
                     this.stokMenipis = barangData.data.stok_menipis || 0;
                     this.jumlahHampirExpired = barangData.data.hampir_expired || 0;
                 }
 
-                // Load Feedback
-                const feedbackRes = await fetch('/api/feedback', { headers });
-                const feedbackData = await feedbackRes.json();
-                if (feedbackData.success) {
-                    this.feedbacks = feedbackData.data.slice(0, 5);
-                }
-
-                // Load Aktivitas Log
-                const aktivitasRes = await fetch('/api/aktivitas-log', { headers });
-                const aktivitasData = await aktivitasRes.json();
-                if (aktivitasData.success) {
-                    this.activities = aktivitasData.data.slice(0, 5);
-                }
-
-                // Load Notifikasi
-                const notifRes = await fetch('/api/notifikasi', { headers });
-                const notifData = await notifRes.json();
-                if (notifData.success) {
-                    this.notifications = notifData.data;
-                    this.displayedNotifications = notifData.data.slice(0, 5);
-                    this.unreadCount = notifData.data.filter(n => !n.is_read).length;
-                }
+                // Load data sekunder (tidak blocking)
+                this.loadSecondaryData(headers);
 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
@@ -103,7 +115,73 @@ createApp({
             }
         },
 
+        async loadSecondaryData(headers) {
+            try {
+                // Load feedback, aktivitas, notifikasi secara parallel
+                const [feedbackRes, aktivitasRes, notifRes] = await Promise.all([
+                    fetch('/api/feedback', { headers }),
+                    fetch('/api/aktivitas-log', { headers }),
+                    fetch('/api/notifikasi', { headers })
+                ]);
+
+                const [feedbackData, aktivitasData, notifData] = await Promise.all([
+                    feedbackRes.json(),
+                    aktivitasRes.json(),
+                    notifRes.json()
+                ]);
+
+                // Feedback
+                if (feedbackData.success) {
+                    this.feedbacks = feedbackData.data.slice(0, 5);
+                }
+
+                // Aktivitas Log
+                if (aktivitasData.success) {
+                    this.activities = aktivitasData.data.slice(0, 5);
+                }
+
+                // Notifikasi
+                if (notifData.success) {
+                    this.notifications = notifData.data;
+                    this.displayedNotifications = notifData.data.slice(0, 5);
+                    this.unreadCount = notifData.data.filter(n => n.status === 'unread').length;
+                }
+
+                // Load donasi barang detail untuk kategori
+                this.loadDonasiBarangDetail(headers);
+
+            } catch (error) {
+                console.error('Error loading secondary data:', error);
+            }
+        },
+
+        async loadDonasiBarangDetail(headers) {
+            try {
+                const response = await fetch('/api/donasi?status_verifikasi=approved&jenis=Barang', { headers });
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    this.totalSembako = data.data.filter(d => 
+                        d.detail && d.detail.toLowerCase().includes('sembako')
+                    ).length;
+                    this.totalPakaian = data.data.filter(d => 
+                        d.detail && d.detail.toLowerCase().includes('pakaian')
+                    ).length;
+                    this.totalObat = data.data.filter(d => 
+                        d.detail && (d.detail.toLowerCase().includes('obat') || d.detail.toLowerCase().includes('kesehatan'))
+                    ).length;
+                }
+            } catch (error) {
+                console.error('Error loading donasi detail:', error);
+            }
+        },
+
+        goToPendingDonasi() {
+            window.location.href = '/admin/kelola-donasi?filter=pending';
+        },
+
         formatRupiah(angka) {
+            if (!angka) return '0';
             return new Intl.NumberFormat('id-ID').format(angka);
         },
 
@@ -113,18 +191,61 @@ createApp({
             return text.substring(0, length) + '...';
         },
 
+        formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        },
+
+        getNotifIcon(type) {
+            const icons = {
+                'donasi_masuk': 'fa-hand-holding-heart text-success',
+                'stok_menipis': 'fa-box text-warning',
+                'hampir_kadaluarsa': 'fa-clock text-orange',
+                'kadaluarsa': 'fa-exclamation-triangle text-danger'
+            };
+            return icons[type] || 'fa-bell text-primary';
+        },
+
         showFullMessage(item) {
             Swal.fire({
                 title: `Pesan dari ${item.nama}`,
-                html: `<div style="text-align: left;">${item.pesan}</div>`,
-                confirmButtonText: 'Tutup', confirmButtonColor: '#1a5c7a'
+                html: `<div style="text-align: left;">${item.pesan}</div>
+                       <small class="text-muted">${this.formatDate(item.tanggal)}</small>`,
+                confirmButtonText: 'Tutup', 
+                confirmButtonColor: '#1a5c7a'
             });
+        },
+
+        async markNotifAsRead(notif) {
+            try {
+                const token = localStorage.getItem('admin_token');
+                await fetch(`/api/notifikasi/${notif.id}/mark-as-read`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                notif.status = 'read';
+                this.unreadCount = this.notifications.filter(n => n.status === 'unread').length;
+            } catch (error) {
+                console.error('Error:', error);
+            }
         },
 
         logoutAdmin() {
             Swal.fire({
-                title: 'Keluar?', text: "Sesi admin akan diakhiri.", icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6',
+                title: 'Keluar?', 
+                text: "Sesi admin akan diakhiri.", 
+                icon: 'warning',
+                showCancelButton: true, 
+                confirmButtonColor: '#d33', 
+                cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Ya, Logout'
             }).then((result) => {
                 if (result.isConfirmed) {

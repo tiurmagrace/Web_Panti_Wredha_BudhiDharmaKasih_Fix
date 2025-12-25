@@ -12,7 +12,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Cek stok menipis dan barang kadaluarsa setiap hari jam 8 pagi
+        $schedule->command('notifications:check-barang')->dailyAt('08:00');
+        
+        // Atau bisa juga setiap 6 jam sekali
+        // $schedule->command('notifications:check-barang')->everySixHours();
     }
 
     /**

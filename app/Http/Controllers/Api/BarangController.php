@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Barang;
 use App\Models\PengambilanStok;
 use App\Models\AktivitasLog;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -198,6 +199,13 @@ class BarangController extends Controller
         ]);
 
         $barang->decrement('sisa_stok', $request->jumlah);
+
+        // Cek apakah stok menipis setelah pengambilan
+        $barang->refresh();
+        $threshold = max($barang->brg_masuk * 0.2, 5);
+        if ($barang->sisa_stok <= $threshold && $barang->sisa_stok > 0) {
+            NotificationService::stokMenipis($barang);
+        }
 
         if (auth()->check()) {
             AktivitasLog::create([

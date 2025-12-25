@@ -1,5 +1,5 @@
 // ==========================================
-// 2. laporan-donasi.js - FIXED
+// 2. laporan-donasi.js - CONNECTED TO API
 // ==========================================
 // File: public/assets/js/laporan-donasi.js
 
@@ -15,10 +15,8 @@ createApp({
             searchQuery: '', alertStatus: null, unreadCount: 0,
             currentUrl: window.location.href, currentPage: 'donasi',
             filterJenis: '', filterBulan: '', filterTahun: '',
-            donasiList: [
-                { id: 1, tanggal: '12/04/2025', donatur: 'Ganjar', jenis: 'Barang', detail: 'Pakaian', jumlah: '1 Karung', status: 'Langsung', petugas: 'Pak Veri' },
-                { id: 2, tanggal: '15/04/2025', donatur: 'Hamba Allah', jenis: 'Tunai', detail: 'Uang Tunai', jumlah: '1.000.000', status: 'Tidak Langsung', petugas: 'Pak Veri' }
-            ]
+            isLoading: false,
+            donasiList: []
         }
     },
     computed: {
@@ -31,10 +29,10 @@ createApp({
                 const matchJenis = this.filterJenis ? item.jenis === this.filterJenis : true;
                 let matchTanggal = true;
                 if (this.filterBulan || this.filterTahun) {
-                    if (item.tanggal && item.tanggal.includes('/')) {
-                        const parts = item.tanggal.split('/');
-                        const monthData = parts[1];
-                        const yearData = parts[2];
+                    if (item.tanggal) {
+                        const d = new Date(item.tanggal);
+                        const monthData = String(d.getMonth() + 1).padStart(2, '0');
+                        const yearData = String(d.getFullYear());
                         if (this.filterBulan && monthData !== this.filterBulan) matchTanggal = false;
                         if (this.filterTahun && yearData !== this.filterTahun) matchTanggal = false;
                     } else {
@@ -43,24 +41,57 @@ createApp({
                 }
                 return matchSearch && matchJenis && matchTanggal;
             });
+        },
+        // Get unique years from data for filter
+        availableYears() {
+            const years = new Set();
+            this.donasiList.forEach(item => {
+                if (item.tanggal) {
+                    const d = new Date(item.tanggal);
+                    years.add(String(d.getFullYear()));
+                }
+            });
+            return Array.from(years).sort((a, b) => b - a);
         }
     },
     mounted() {
+        this.loadDonasi();
+        
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.get('status') === 'sent') {
             this.alertStatus = 'sent';
             window.history.replaceState({}, document.title, window.location.pathname);
         }
-        const dataBaru = JSON.parse(localStorage.getItem('donasiList'));
-        if (dataBaru && Array.isArray(dataBaru)) {
-            dataBaru.forEach(item => {
-                if(!this.donasiList.some(d => d.donatur === item.donatur && d.jumlah === item.jumlah)) {
-                    this.donasiList.unshift(item);
-                }
-            });
-        }
     },
     methods: {
+        async loadDonasi() {
+            this.isLoading = true;
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/donasi', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // Filter hanya donasi yang sudah approved
+                    this.donasiList = data.data.filter(d => d.status_verifikasi === 'approved');
+                }
+            } catch (error) {
+                console.error('Error loading donasi:', error);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+        
+        formatTanggal(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+        },
+        
         resetFilter() {
             this.filterJenis = ''; this.filterBulan = ''; this.filterTahun = '';
             this.searchQuery = '';
@@ -77,6 +108,7 @@ createApp({
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
+                    localStorage.removeItem('admin_token');
                     window.location.href = '/admin/login';
                 }
             });
