@@ -1,5 +1,5 @@
 // ==========================================
-// 2. semua-aktivitas.js - FIXED FOR LARAVEL
+// 2. semua-aktivitas.js - TERHUBUNG KE DATABASE
 // ==========================================
 // File: public/assets/js/semua-aktivitas.js
 
@@ -12,32 +12,58 @@ const { createApp } = window.Vue;
 createApp({
     data() {
         return {
-            searchQuery: '', filterKategori: '', activities: [],
-            currentUrl: window.location.href, unreadCount: 0
+            searchQuery: '', 
+            filterKategori: '', 
+            activities: [],
+            isLoading: false,
+            currentUrl: window.location.href, 
+            unreadCount: 0
         }
     },
     computed: {
         filteredList() {
             let result = this.activities.filter(item => {
-                return item.text.toLowerCase().includes(this.searchQuery.toLowerCase());
+                const text = (item.text || '').toLowerCase();
+                const kategori = (item.kategori || '').toLowerCase();
+                return text.includes(this.searchQuery.toLowerCase()) ||
+                       kategori.includes(this.searchQuery.toLowerCase());
             });
             if (this.filterKategori) {
-                result = result.filter(item => {
-                    return item.text.toLowerCase().includes(this.filterKategori.toLowerCase());
-                });
+                result = result.filter(item => item.kategori === this.filterKategori);
             }
             return result;
+        },
+        uniqueKategori() {
+            return [...new Set(this.activities.map(a => a.kategori).filter(Boolean))];
         }
     },
     mounted() {
-        const logs = JSON.parse(localStorage.getItem('activityLog')) || [];
-        this.activities = logs.reverse();
+        this.loadActivities();
     },
     methods: {
-        formatTanggal(waktu) {
-            if (!waktu || typeof waktu === 'string' && waktu.length < 10) {
-                return waktu;
+        async loadActivities() {
+            this.isLoading = true;
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/aktivitas-log', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.activities = data.data;
+                }
+            } catch (error) {
+                console.error('Error loading activities:', error);
+            } finally {
+                this.isLoading = false;
             }
+        },
+        
+        formatTanggal(waktu) {
+            if (!waktu) return '-';
             try {
                 const date = new Date(waktu);
                 if (isNaN(date.getTime())) return waktu;
@@ -49,6 +75,17 @@ createApp({
                 return waktu;
             }
         },
+        
+        getKategoriClass(kategori) {
+            const classes = {
+                'Donasi': 'bg-success',
+                'Barang': 'bg-warning text-dark',
+                'Penghuni': 'bg-info',
+                'System': 'bg-secondary'
+            };
+            return classes[kategori] || 'bg-primary';
+        },
+        
         logoutAdmin() {
             Swal.fire({
                 title: 'Keluar?', text: "Sesi admin akan diakhiri.", icon: 'warning',
@@ -57,6 +94,7 @@ createApp({
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminLoggedIn');
+                    localStorage.removeItem('admin_token');
                     window.location.href = '/admin/login';
                 }
             });

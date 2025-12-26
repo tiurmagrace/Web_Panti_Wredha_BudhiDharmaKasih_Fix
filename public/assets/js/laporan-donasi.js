@@ -76,7 +76,6 @@ createApp({
                 });
                 const data = await response.json();
                 if (data.success) {
-                    // Filter hanya donasi yang sudah approved
                     this.donasiList = data.data.filter(d => d.status_verifikasi === 'approved');
                 }
             } catch (error) {

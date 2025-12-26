@@ -51,9 +51,8 @@ createApp({
     },
     watch: { 
         'form.jenis'(newValue, oldValue) { 
-            // Hanya reset detail jika data sudah loaded DAN jenis benar-benar berubah oleh user
-            if (this.isDataLoaded && oldValue && newValue !== oldValue) {
-                // Jika berubah dari Barang ke Tunai atau sebaliknya, reset detail
+            // Hanya reset detail jika user mengubah jenis (bukan saat load awal)
+            if (this.isDataLoaded && oldValue !== '' && newValue !== oldValue) {
                 this.form.detail = ''; 
             }
         } 
@@ -96,17 +95,9 @@ createApp({
                     }
                 }
                 
-                // Set flag bahwa data sudah loaded (dengan delay agar watch tidak trigger)
+                // Set flag bahwa data sudah loaded
                 this.$nextTick(() => {
-                    setTimeout(() => {
-                        this.isDataLoaded = true;
-                        console.log('✅ Data loaded successfully:', {
-                            id: this.editId,
-                            donatur: this.form.donatur,
-                            jenis: this.form.jenis,
-                            detail: this.form.detail
-                        });
-                    }, 100);
+                    this.isDataLoaded = true;
                 });
             } else {
                 console.error('❌ No edit data found in localStorage');

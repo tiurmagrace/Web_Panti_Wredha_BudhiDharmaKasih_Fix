@@ -22,8 +22,10 @@
         <div>
             <select v-model="filterType" class="filter-select">
                 <option value="">Semua Tipe</option>
-                <option value="donasi">Donasi Masuk</option>
-                <option value="stok">Stok Menipis</option>
+                <option value="donasi_masuk">Donasi Masuk</option>
+                <option value="stok_menipis">Stok Menipis</option>
+                <option value="hampir_kadaluarsa">Hampir Kadaluarsa</option>
+                <option value="kadaluarsa">Kadaluarsa</option>
             </select>
         </div>
     </div>
@@ -35,9 +37,8 @@
 
     <div v-else>
         <div v-for="(notif, index) in filteredList" :key="index" class="notif-item">
-            <div class="notif-icon-box" :class="notif.type === 'stok' ? 'bg-soft-orange' : 'bg-soft-green'">
-                <i v-if="notif.type === 'donasi'" class="fas fa-box-open"></i>
-                <i v-else class="fas fa-exclamation-triangle"></i>
+            <div class="notif-icon-box" :class="getIconClass(notif.type)">
+                <i :class="getIconType(notif.type)"></i>
             </div>
             
             <div class="notif-content flex-grow-1">

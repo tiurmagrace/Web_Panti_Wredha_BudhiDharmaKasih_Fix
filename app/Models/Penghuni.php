@@ -34,12 +34,16 @@ class Penghuni extends Model
         'tgl_masuk',
         'rujukan',
         'paviliun',
+        'status_penghuni',
+        'tgl_keluar',
+        'alasan_keluar',
         'catatan',
         'foto',
     ];
 
     protected $casts = [
         'tgl_masuk' => 'date',
+        'tgl_keluar' => 'date',
     ];
 
     // Accessor untuk tahun masuk
@@ -57,6 +61,16 @@ class Penghuni extends Model
     public function scopeByTahun($query, $tahun)
     {
         return $query->whereYear('tgl_masuk', $tahun);
+    }
+
+    public function scopeAktif($query)
+    {
+        return $query->where('status_penghuni', 'Aktif');
+    }
+
+    public function scopeByStatusPenghuni($query, $status)
+    {
+        return $query->where('status_penghuni', $status);
     }
 
     public function scopeSearch($query, $search)

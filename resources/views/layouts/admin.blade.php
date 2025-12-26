@@ -26,7 +26,7 @@
 </head>
 <body class="bg-admin">
 
-    <div id="adminApp" v-cloak>
+    <div id="adminApp">
         
         {{-- Header --}}
         @include('partials.header-admin')

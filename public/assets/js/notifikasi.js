@@ -89,10 +89,24 @@ createApp({
         },
 
         getTypeClass(type) {
-            if (type.includes('donasi')) return 'badge-donasi';
-            if (type.includes('stok') || type.includes('kadaluarsa')) return 'badge-stok';
-            if (type.includes('penghuni')) return 'badge-penghuni';
+            if (type && type.includes('donasi')) return 'badge-donasi';
+            if (type && (type.includes('stok') || type.includes('kadaluarsa'))) return 'badge-stok';
+            if (type && type.includes('penghuni')) return 'badge-penghuni';
             return 'badge-system';
+        },
+
+        getIconClass(type) {
+            if (type === 'donasi_masuk') return 'bg-soft-green';
+            if (type === 'stok_menipis') return 'bg-soft-orange';
+            if (type === 'hampir_kadaluarsa' || type === 'kadaluarsa') return 'bg-soft-red';
+            return 'bg-soft-blue';
+        },
+
+        getIconType(type) {
+            if (type === 'donasi_masuk') return 'fas fa-hand-holding-heart';
+            if (type === 'stok_menipis') return 'fas fa-box';
+            if (type === 'hampir_kadaluarsa' || type === 'kadaluarsa') return 'fas fa-exclamation-triangle';
+            return 'fas fa-bell';
         },
 
         async markAsRead(notif) {

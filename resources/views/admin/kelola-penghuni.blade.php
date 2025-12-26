@@ -29,7 +29,7 @@
             </select>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label class="fw-bold small text-muted mb-1">Tahun Masuk</label>
             <select v-model="filterTahun" class="form-select border-primary text-primary" style="font-size: 0.9rem;">
                 <option value="">Semua Tahun</option>
@@ -38,7 +38,17 @@
         </div>
 
         <div class="col-md-2">
-            <button v-if="filterPaviliun || filterTahun" @click="resetFilter" class="btn btn-outline-danger btn-sm w-100" style="height: 38px;">
+            <label class="fw-bold small text-muted mb-1">Status Penghuni</label>
+            <select v-model="filterStatusPenghuni" class="form-select border-primary text-primary" style="font-size: 0.9rem;">
+                <option value="">Semua Status</option>
+                <option value="Aktif">Masih di Panti</option>
+                <option value="Keluar">Sudah Keluar</option>
+                <option value="Meninggal">Meninggal</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <button v-if="filterPaviliun || filterTahun || filterStatusPenghuni" @click="resetFilter" class="btn btn-outline-danger btn-sm w-100" style="height: 38px;">
                 <i class="fas fa-times"></i> Reset Filter
             </button>
         </div>
@@ -55,6 +65,7 @@
                     <th>Kota Asal</th>
                     <th>Tahun Masuk</th>
                     <th>Paviliun</th>
+                    <th>Status</th>
                     <th class="text-center">Aksi</th>
                 </tr>
             </thead>
@@ -67,6 +78,11 @@
                     <td>@{{ item.tahun }}</td>
                     <td>@{{ formatUpperCase(item.paviliun) }}</td>
                     <td>
+                        <span :class="getStatusClass(item.status_penghuni)">
+                            @{{ item.status_penghuni || 'Aktif' }}
+                        </span>
+                    </td>
+                    <td>
                         <div class="d-flex gap-2 justify-content-center">
                             <button @click="openModal(item, 'detail')" class="btn-action-custom" title="Detail">
                                 <i class="fas fa-file-alt"></i>
@@ -78,7 +94,7 @@
                     </td>
                 </tr>
                 <tr v-if="paginatedList.length === 0">
-                    <td colspan="7" class="text-center py-5 text-muted">
+                    <td colspan="8" class="text-center py-5 text-muted">
                         <i class="fas fa-inbox fa-3x mb-3"></i><br>
                         Data tidak ditemukan.
                     </td>
@@ -166,6 +182,13 @@
                 <div class="detail-row"><div class="detail-label">Tgl Masuk</div><div class="detail-value">: @{{ tempFormData.tgl_masuk }}</div></div>
                 <div class="detail-row"><div class="detail-label">Sumber Rujukan</div><div class="detail-value">: @{{ tempFormData.rujukan }}</div></div>
                 <div class="detail-row"><div class="detail-label">Paviliun</div><div class="detail-value">: @{{ formatTitleCase(tempFormData.paviliun) }}</div></div>
+                <div class="detail-row"><div class="detail-label">Status Penghuni</div><div class="detail-value">: <span :class="getStatusClass(tempFormData.status_penghuni)">@{{ tempFormData.status_penghuni || 'Aktif' }}</span></div></div>
+                <div v-if="tempFormData.status_penghuni === 'Keluar' || tempFormData.status_penghuni === 'Meninggal'" class="detail-row">
+                    <div class="detail-label">Tgl Keluar</div><div class="detail-value">: @{{ tempFormData.tgl_keluar }}</div>
+                </div>
+                <div v-if="tempFormData.alasan_keluar" class="detail-row">
+                    <div class="detail-label">Alasan</div><div class="detail-value">: @{{ tempFormData.alasan_keluar }}</div>
+                </div>
 
                 <div class="modal-section-title">Catatan</div>
                 <div class="detail-row"><div class="detail-label">Catatan Khusus</div><div class="detail-value">: @{{ tempFormData.catatan }}</div></div>
@@ -262,6 +285,24 @@
                             <option>DAHLIA</option>
                         </select>
                     </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Status Penghuni</div>
+                    <div class="detail-value">
+                        <select v-model="tempFormData.status_penghuni" class="edit-input">
+                            <option value="Aktif">Masih di Panti</option>
+                            <option value="Keluar">Sudah Keluar</option>
+                            <option value="Meninggal">Meninggal</option>
+                        </select>
+                    </div>
+                </div>
+                <div v-if="tempFormData.status_penghuni === 'Keluar' || tempFormData.status_penghuni === 'Meninggal'" class="detail-row">
+                    <div class="detail-label">Tgl Keluar</div>
+                    <div class="detail-value"><input type="date" v-model="tempFormData.tgl_keluar" class="edit-input"></div>
+                </div>
+                <div v-if="tempFormData.status_penghuni === 'Keluar' || tempFormData.status_penghuni === 'Meninggal'" class="detail-row">
+                    <div class="detail-label">Alasan</div>
+                    <div class="detail-value"><input type="text" v-model="tempFormData.alasan_keluar" class="edit-input" placeholder="Alasan keluar/meninggal"></div>
                 </div>
 
                 <div class="modal-section-title">Catatan</div>

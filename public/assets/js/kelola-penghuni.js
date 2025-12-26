@@ -13,7 +13,7 @@ createApp({
         return {
             alertStatus: null, isModalOpen: false, modalMode: 'detail',
             currentPage: 1, itemsPerPage: 20, tempFormData: {}, editingId: null,
-            searchQuery: '', filterPaviliun: '', filterTahun: '',
+            searchQuery: '', filterPaviliun: '', filterTahun: '', filterStatusPenghuni: '',
             penghuniList: [], isLoading: false,
             currentUrl: window.location.href, activePage: 'penghuni', unreadCount: 0
         }
@@ -41,7 +41,9 @@ createApp({
                                     (item.paviliun && item.paviliun.toUpperCase() === this.filterPaviliun.toUpperCase());
                 const itemYear = item.tgl_masuk ? new Date(item.tgl_masuk).getFullYear().toString() : '';
                 const matchTahun = this.filterTahun === '' || itemYear === this.filterTahun;
-                return matchSearch && matchPaviliun && matchTahun;
+                const matchStatus = this.filterStatusPenghuni === '' || 
+                                   (item.status_penghuni || 'Aktif') === this.filterStatusPenghuni;
+                return matchSearch && matchPaviliun && matchTahun && matchStatus;
             }).sort((a, b) => new Date(b.tgl_masuk) - new Date(a.tgl_masuk));
         },
 
@@ -89,8 +91,17 @@ createApp({
         formatUpperCase(str) { return str ? String(str).toUpperCase() : '-'; },
         formatTitleCase(str) { return str ? String(str).toLowerCase().replace(/(?:^|\s)\w/g, m => m.toUpperCase()) : '-'; },
         
+        getStatusClass(status) {
+            const classes = {
+                'Aktif': 'badge bg-success',
+                'Keluar': 'badge bg-warning text-dark',
+                'Meninggal': 'badge bg-secondary'
+            };
+            return classes[status] || 'badge bg-success';
+        },
+        
         resetFilter() {
-            this.filterPaviliun = ''; this.filterTahun = ''; this.searchQuery = ''; this.currentPage = 1;
+            this.filterPaviliun = ''; this.filterTahun = ''; this.filterStatusPenghuni = ''; this.searchQuery = ''; this.currentPage = 1;
         },
 
         triggerFileInput() {
