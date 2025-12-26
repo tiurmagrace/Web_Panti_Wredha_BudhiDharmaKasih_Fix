@@ -2,6 +2,9 @@
    KELOLA PENGHUNI - CUSTOM STYLES
    ======================================== */
 
+/* Hide Vue elements until mounted */
+[v-cloak] { display: none !important; }
+
 /* Animasi Modal */
 @keyframes modalSlideIn {
     from {

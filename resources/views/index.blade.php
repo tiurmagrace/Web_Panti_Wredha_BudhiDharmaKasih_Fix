@@ -3,7 +3,7 @@
 @section('title', 'Beranda')
 
 @section('content')
-<div id="homepageApp">
+<div id="homepageApp" v-cloak>
 
     <!-- HERO CAROUSEL -->
             <section id="heroCarousel" class="carousel slide" data-bs-ride="carousel">

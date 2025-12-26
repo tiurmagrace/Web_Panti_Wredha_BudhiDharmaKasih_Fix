@@ -116,7 +116,17 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="(item, index) in paginatedList" :key="index">
+                {{-- Loading State --}}
+                <tr v-if="isLoading">
+                    <td colspan="9" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Memuat data...</p>
+                    </td>
+                </tr>
+                {{-- Data Rows --}}
+                <tr v-else v-for="(item, index) in paginatedList" :key="index">
                     <td>@{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
                     <td>@{{ formatTanggal(item.tanggal) }}</td>
                     <td>@{{ formatTitleCase(item.donatur) }}</td>
@@ -168,7 +178,8 @@
                         </div>
                     </td>
                 </tr>
-                <tr v-if="paginatedList.length === 0">
+                {{-- Empty State --}}
+                <tr v-if="!isLoading && paginatedList.length === 0">
                     <td colspan="9" class="text-center py-5 text-muted">
                         <i class="fas fa-search fa-3x mb-3 d-block" style="opacity: 0.3;"></i>
                         Data tidak ditemukan.

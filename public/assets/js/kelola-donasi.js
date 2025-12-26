@@ -13,7 +13,7 @@ createApp({
         return {
             searchQuery: '', alertStatus: null, currentPage: 1, itemsPerPage: 20,
             showFilter: false, unreadCount: 0, currentUrl: window.location.href,
-            activePage: 'donasi', isLoading: false,
+            activePage: 'donasi', isLoading: true, // Start with loading true
             filterJenis: '', filterStatus: '', filterPetugas: '', filterVerifikasi: '',
             filterTanggalMulai: '', filterTanggalSelesai: '',
             donasiList: []
@@ -78,7 +78,6 @@ createApp({
     },
     methods: {
         async loadDonasi() {
-            this.isLoading = true;
             try {
                 const token = localStorage.getItem('admin_token');
                 const response = await fetch('/api/donasi', {

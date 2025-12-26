@@ -27,7 +27,7 @@ return new class extends Migration
         Schema::create('notifikasi', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->enum('type', ['donasi', 'stok', 'penghuni', 'system']);
+            $table->enum('type', ['donasi', 'stok', 'penghuni', 'system', 'donasi_masuk', 'donasi_diterima', 'donasi_ditolak', 'ucapan_terimakasih']);
             $table->string('title');
             $table->text('text');
             $table->date('date');

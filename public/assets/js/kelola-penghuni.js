@@ -14,7 +14,7 @@ createApp({
             alertStatus: null, isModalOpen: false, modalMode: 'detail',
             currentPage: 1, itemsPerPage: 20, tempFormData: {}, editingId: null,
             searchQuery: '', filterPaviliun: '', filterTahun: '', filterStatusPenghuni: '',
-            penghuniList: [], isLoading: false,
+            penghuniList: [], isLoading: true, // Start with loading true
             currentUrl: window.location.href, activePage: 'penghuni', unreadCount: 0
         }
     },
@@ -68,7 +68,6 @@ createApp({
 
     methods: {
         async loadDataPenghuni() {
-            this.isLoading = true;
             try {
                 const token = localStorage.getItem('admin_token');
                 const response = await fetch('/api/penghuni', {

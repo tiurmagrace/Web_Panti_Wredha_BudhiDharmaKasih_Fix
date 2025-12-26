@@ -60,24 +60,26 @@
                 </a>
 
 
-                <!-- LOGIN STATE -->
-                <div v-if="isLoggedIn" class="d-flex align-items-center gap-2">
-                    <span class="text-white fw-bold">
-                        Hi, @{{ currentUser.username }}
-                    </span>
+                <!-- LOGIN STATE - hanya bagian ini yang pakai v-cloak -->
+                <div v-cloak>
+                    <div v-if="isLoggedIn" class="d-flex align-items-center gap-2">
+                        <span class="text-white fw-bold">
+                            Hi, @{{ currentUser.username }}
+                        </span>
 
-                    <!-- OPEN MODAL -->
-                    <button
-                        class="btn btn-sm btn-danger rounded-pill px-3"
-                        @click="confirmLogout"
-                    >
-                        Logout
-                    </button>
+                        <!-- OPEN MODAL -->
+                        <button
+                            class="btn btn-sm btn-danger rounded-pill px-3"
+                            @click="confirmLogout"
+                        >
+                            Logout
+                        </button>
+                    </div>
+
+                    <a v-else href="{{ url('auth/login') }}" class="cta-button primary">
+                        LOGIN
+                    </a>
                 </div>
-
-                <a v-else href="{{ url('auth/login') }}" class="cta-button primary">
-                    LOGIN
-                </a>
 
             </div>
 

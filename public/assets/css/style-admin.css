@@ -11,6 +11,23 @@
     --font-main: 'Poppins', sans-serif;
 }
 
+/* Hide Vue elements until mounted */
+[v-cloak] { display: none !important; }
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 31, 63, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
 html, body {
     height: 100%; 
     margin: 0;

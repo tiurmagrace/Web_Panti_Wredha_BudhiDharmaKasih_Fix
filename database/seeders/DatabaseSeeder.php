@@ -22,17 +22,17 @@ class DatabaseSeeder extends Seeder
         // ============================================
         echo "🗑️  Menghapus data lama...\n";
         
-        // Nonaktifkan foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+        // Nonaktifkan foreign key constraints (PostgreSQL)
+        DB::statement('SET session_replication_role = replica');
         
-        // Kosongkan semua tabel
-        User::truncate();
-        Penghuni::truncate();
-        Donasi::truncate();
-        Barang::truncate();
+        // Kosongkan semua tabel dengan CASCADE
+        DB::table('donasi')->truncate();
+        DB::table('barang')->truncate();
+        DB::table('penghuni')->truncate();
+        DB::table('users')->truncate();
         
-        // Aktifkan kembali foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
+        // Aktifkan kembali foreign key constraints
+        DB::statement('SET session_replication_role = DEFAULT');
         
         echo "✅ Data lama berhasil dihapus!\n\n";
         

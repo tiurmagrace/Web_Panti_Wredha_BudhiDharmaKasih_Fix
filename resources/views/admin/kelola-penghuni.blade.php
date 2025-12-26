@@ -70,7 +70,17 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="(item, index) in paginatedList" :key="item.nik || index">
+                {{-- Loading State --}}
+                <tr v-if="isLoading">
+                    <td colspan="8" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Memuat data...</p>
+                    </td>
+                </tr>
+                {{-- Data Rows --}}
+                <tr v-else v-for="(item, index) in paginatedList" :key="item.nik || index">
                     <td>@{{ item.nik }}</td>
                     <td>@{{ formatTitleCase(item.nama) }}</td>
                     <td>@{{ formatUpperCase(item.ttl) }}</td>
@@ -93,7 +103,8 @@
                         </div>
                     </td>
                 </tr>
-                <tr v-if="paginatedList.length === 0">
+                {{-- Empty State --}}
+                <tr v-if="!isLoading && paginatedList.length === 0">
                     <td colspan="8" class="text-center py-5 text-muted">
                         <i class="fas fa-inbox fa-3x mb-3"></i><br>
                         Data tidak ditemukan.
@@ -118,7 +129,7 @@
 </div>
 
 {{-- Modal Detail/Edit --}}
-<div v-if="isModalOpen" 
+<div v-if="isModalOpen" v-cloak
      @click.self="closeModal" 
      style="position: fixed !important; 
             top: 0 !important; 

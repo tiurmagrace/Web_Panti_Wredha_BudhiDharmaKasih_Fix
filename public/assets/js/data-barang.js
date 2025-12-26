@@ -13,7 +13,7 @@ createApp({
         return {
             searchQuery: '', startDate: '', endDate: '', filterType: 'tgl_masuk',
             currentPage: 1, itemsPerPage: 10, isModalOpen: false, modalMode: 'detail',
-            tempFormData: {}, editingId: null, barangList: [], isLoading: false,
+            tempFormData: {}, editingId: null, barangList: [], isLoading: true, // Start with loading true
             unreadCount: 0, currentUrl: window.location.href, activePage: 'barang'
         }
     },
@@ -58,7 +58,6 @@ createApp({
     },
     methods: {
         async loadBarang() {
-            this.isLoading = true;
             try {
                 const token = localStorage.getItem('admin_token');
                 const response = await fetch('/api/barang', {

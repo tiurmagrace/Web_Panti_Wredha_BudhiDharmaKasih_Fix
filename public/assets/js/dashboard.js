@@ -35,7 +35,7 @@ createApp({
             // UI
             currentUrl: window.location.href, 
             activePage: 'dashboard',
-            isLoading: false
+            isLoading: false // Langsung false, biar UI muncul dulu
         }
     },
     computed: {
@@ -58,12 +58,9 @@ createApp({
     mounted() {
         console.log('✅ Dashboard Mounted!');
         this.loadAllData();
-        // Refresh setiap 60 detik (lebih lama agar tidak berat)
-        setInterval(() => this.loadAllData(), 60000);
     },
     methods: {
         async loadAllData() {
-            this.isLoading = true;
             const token = localStorage.getItem('admin_token');
             const headers = { 
                 'Accept': 'application/json', 
@@ -71,17 +68,23 @@ createApp({
             };
 
             try {
-                // Load data penting dulu (parallel)
-                const [penghuniRes, donasiRes, barangRes] = await Promise.all([
+                // Load semua data sekaligus (parallel) untuk speed
+                const [penghuniRes, donasiRes, barangRes, feedbackRes, aktivitasRes, notifRes] = await Promise.all([
                     fetch('/api/penghuni/statistics', { headers }),
                     fetch('/api/donasi/admin/statistics', { headers }),
-                    fetch('/api/barang/statistics', { headers })
+                    fetch('/api/barang/statistics', { headers }),
+                    fetch('/api/feedback', { headers }),
+                    fetch('/api/aktivitas-log', { headers }),
+                    fetch('/api/notifikasi', { headers })
                 ]);
 
-                const [penghuniData, donasiData, barangData] = await Promise.all([
+                const [penghuniData, donasiData, barangData, feedbackData, aktivitasData, notifData] = await Promise.all([
                     penghuniRes.json(),
                     donasiRes.json(),
-                    barangRes.json()
+                    barangRes.json(),
+                    feedbackRes.json(),
+                    aktivitasRes.json(),
+                    notifRes.json()
                 ]);
 
                 // Penghuni Statistics
@@ -105,31 +108,6 @@ createApp({
                     this.jumlahHampirExpired = barangData.data.hampir_expired || 0;
                 }
 
-                // Load data sekunder (tidak blocking)
-                this.loadSecondaryData(headers);
-
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        async loadSecondaryData(headers) {
-            try {
-                // Load feedback, aktivitas, notifikasi secara parallel
-                const [feedbackRes, aktivitasRes, notifRes] = await Promise.all([
-                    fetch('/api/feedback', { headers }),
-                    fetch('/api/aktivitas-log', { headers }),
-                    fetch('/api/notifikasi', { headers })
-                ]);
-
-                const [feedbackData, aktivitasData, notifData] = await Promise.all([
-                    feedbackRes.json(),
-                    aktivitasRes.json(),
-                    notifRes.json()
-                ]);
-
                 // Feedback
                 if (feedbackData.success) {
                     this.feedbacks = feedbackData.data.slice(0, 5);
@@ -147,32 +125,10 @@ createApp({
                     this.unreadCount = notifData.data.filter(n => n.status === 'unread').length;
                 }
 
-                // Load donasi barang detail untuk kategori
-                this.loadDonasiBarangDetail(headers);
-
             } catch (error) {
-                console.error('Error loading secondary data:', error);
-            }
-        },
-
-        async loadDonasiBarangDetail(headers) {
-            try {
-                const response = await fetch('/api/donasi?status_verifikasi=approved&jenis=Barang', { headers });
-                const data = await response.json();
-                
-                if (data.success && data.data) {
-                    this.totalSembako = data.data.filter(d => 
-                        d.detail && d.detail.toLowerCase().includes('sembako')
-                    ).length;
-                    this.totalPakaian = data.data.filter(d => 
-                        d.detail && d.detail.toLowerCase().includes('pakaian')
-                    ).length;
-                    this.totalObat = data.data.filter(d => 
-                        d.detail && (d.detail.toLowerCase().includes('obat') || d.detail.toLowerCase().includes('kesehatan'))
-                    ).length;
-                }
-            } catch (error) {
-                console.error('Error loading donasi detail:', error);
+                console.error('Error loading dashboard data:', error);
+            } finally {
+                this.isLoading = false;
             }
         },
 

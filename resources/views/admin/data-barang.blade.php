@@ -73,7 +73,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(item, index) in paginatedList" :key="index">
+                    {{-- Loading State --}}
+                    <tr v-if="isLoading">
+                        <td colspan="8" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Memuat data...</p>
+                        </td>
+                    </tr>
+                    {{-- Data Rows --}}
+                    <tr v-else v-for="(item, index) in paginatedList" :key="index">
                         <td>@{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
                         <td>@{{ item.nama }}</td>
                         <td>@{{ item.kategori }}</td>
@@ -101,7 +111,8 @@
                             </div>
                         </td>
                     </tr>
-                    <tr v-if="paginatedList.length === 0">
+                    {{-- Empty State --}}
+                    <tr v-if="!isLoading && paginatedList.length === 0">
                         <td colspan="8" class="text-center py-5 text-muted">Data tidak ditemukan.</td>
                     </tr>
                 </tbody>
@@ -122,7 +133,7 @@
     </div>
 
     {{-- MODAL DETAIL/EDIT --}}
-    <div v-if="isModalOpen" class="modal-overlay" @click.self="closeModal">
+    <div v-if="isModalOpen" v-cloak class="modal-overlay" @click.self="closeModal">
         <div class="modal-container">
             <div class="modal-header">@{{ modalMode === 'detail' ? 'Detail Barang' : 'Edit Barang / Input Stok' }}</div>
             <div class="modal-body">
