@@ -23,12 +23,16 @@
     </div>
     <div class="col-md-4">
         <div class="custom-card">
-            <ul class="list-unstyled list-content-for-old-style">
-                <li>• @{{ totalSembako }} Sembako</li>
-                <li>• @{{ totalPakaian }} Pakaian</li>
-                <li>• @{{ totalObat }} Obat-obatan</li>
+            <h2>@{{ totalDonasiBulanIni }} Donasi</h2>
+            <ul class="list-unstyled list-content-for-old-style" style="font-size: 0.85rem; margin-top: 8px;" v-if="Object.keys(kategoriBulanIni).length > 0">
+                <li v-for="(jumlah, kategori) in kategoriBulanIni" :key="kategori">
+                    • @{{ jumlah }} @{{ kategori }}
+                </li>
             </ul>
-            <p class="card-label">Donasi Barang Bulan Ini</p>
+            <div v-else class="text-muted" style="font-size: 0.85rem; margin-top: 8px;">
+                Belum ada donasi bulan ini
+            </div>
+            <p class="card-label">Donasi Masuk Bulan Ini</p>
         </div>
     </div>
 </div>

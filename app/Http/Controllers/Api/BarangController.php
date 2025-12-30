@@ -7,6 +7,7 @@ use App\Models\Barang;
 use App\Models\PengambilanStok;
 use App\Models\AktivitasLog;
 use App\Services\NotificationService;
+use App\Helpers\FileUploadHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -77,27 +78,41 @@ class BarangController extends Controller
             ], 422);
         }
 
-        $data = $request->all();
-        $data['brg_masuk'] = $data['brg_masuk'] ?? 0;
-        $data['sisa_stok'] = $data['sisa_stok'] ?? $data['brg_masuk'];
-        $data['tgl_masuk'] = $data['tgl_masuk'] ?? now()->toDateString();
+        try {
+            $data = $request->all();
+            $data['brg_masuk'] = $data['brg_masuk'] ?? 0;
+            $data['sisa_stok'] = $data['sisa_stok'] ?? $data['brg_masuk'];
+            $data['tgl_masuk'] = $data['tgl_masuk'] ?? now()->toDateString();
+            
+            // Handle foto - simpan ke file jika base64
+            if (isset($data['foto']) && FileUploadHelper::isBase64Image($data['foto'])) {
+                $filePath = FileUploadHelper::saveBase64ToFile($data['foto'], 'barang');
+                $data['foto'] = $filePath ?: null;
+            }
 
-        $barang = Barang::create($data);
+            $barang = Barang::create($data);
 
-        if (auth()->check()) {
-            AktivitasLog::create([
-                'user_id' => auth()->id(),
-                'kategori' => 'Barang',
-                'text' => "Menambahkan stok barang: {$barang->nama}",
-                'time' => now(),
-            ]);
+            if (auth()->check()) {
+                AktivitasLog::create([
+                    'user_id' => auth()->id(),
+                    'kategori' => 'Barang',
+                    'text' => "Menambahkan stok barang: {$barang->nama}",
+                    'time' => now(),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data barang berhasil ditambahkan',
+                'data' => $barang
+            ], 201);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan data: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data barang berhasil ditambahkan',
-            'data' => $barang
-        ], 201);
     }
 
     /**
@@ -114,7 +129,21 @@ class BarangController extends Controller
             ], 404);
         }
 
-        $barang->update($request->all());
+        $data = $request->all();
+        
+        // Handle foto - simpan ke file jika base64
+        if (isset($data['foto']) && FileUploadHelper::isBase64Image($data['foto'])) {
+            $filePath = FileUploadHelper::saveBase64ToFile($data['foto'], 'barang');
+            if ($filePath) {
+                // Hapus foto lama jika ada
+                if ($barang->foto && !FileUploadHelper::isBase64Image($barang->foto)) {
+                    FileUploadHelper::delete($barang->foto);
+                }
+                $data['foto'] = $filePath;
+            }
+        }
+
+        $barang->update($data);
 
         if (auth()->check()) {
             AktivitasLog::create([
@@ -257,6 +286,9 @@ class BarangController extends Controller
             ->whereDate('expired', '>=', now())
             ->count();
 
+        // Auto-check dan kirim notifikasi untuk barang hampir expired/stok menipis
+        NotificationService::checkBarangNotifications();
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -264,6 +296,20 @@ class BarangController extends Controller
                 'stok_menipis' => $stokMenipis,
                 'hampir_expired' => $hampirExpired,
             ]
+        ]);
+    }
+
+    /**
+     * Manual trigger untuk cek notifikasi barang
+     */
+    public function checkNotifications()
+    {
+        $notifications = NotificationService::checkBarangNotifications();
+        
+        return response()->json([
+            'success' => true,
+            'message' => count($notifications) . ' notifikasi baru dibuat',
+            'data' => $notifications
         ]);
     }
 }

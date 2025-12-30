@@ -10,10 +10,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    {{-- Critical CSS inline untuk mencegah blank --}}
+    {{-- Critical CSS inline untuk mencegah blank/flash --}}
     <style>
-        /* Hide Vue elements until mounted */
+        /* Hide Vue elements until mounted - CRITICAL */
         [v-cloak] { display: none !important; }
+        
+        /* Immediate render styles */
+        * { box-sizing: border-box; }
         
         body {
             margin: 0;
@@ -23,25 +26,51 @@
             display: flex;
             flex-direction: column;
             background-color: #EAF4FF;
+            opacity: 1;
+            visibility: visible;
         }
+        
+        /* Navbar immediate render */
+        .navbar {
+            background-color: #1D4E89;
+            padding: 5px 0;
+            min-height: 80px;
+        }
+        
+        /* Main content wrapper */
         #homepageApp {
             display: flex;
             flex-direction: column;
             flex: 1;
             min-height: calc(100vh - 80px);
+            opacity: 1;
         }
+        
         main.content-wrapper {
             flex: 1 0 auto;
             background-color: #EAF4FF;
+            min-height: 400px;
         }
-        .navbar {
-            background-color: #1D4E89;
-            padding: 5px 0;
-        }
+        
+        /* Footer immediate render */
         .footer-new {
             background-color: #1D4E89;
             flex-shrink: 0;
             margin-top: auto;
+            min-height: 200px;
+        }
+        
+        /* Prevent layout shift */
+        .nav-link, .dropdown-menu { visibility: visible; }
+        
+        /* Smooth transition after load */
+        .page-ready main.content-wrapper {
+            animation: fadeInContent 0.2s ease-out;
+        }
+        
+        @keyframes fadeInContent {
+            from { opacity: 0.8; }
+            to { opacity: 1; }
         }
     </style>
 
@@ -63,41 +92,37 @@
 
 <body>
 
-    {{-- NAVBAR --}}
+    {{-- NAVBAR - Standalone Vue App --}}
     <div id="navbarApp">
         @include('partials.navbar-donatur')
     </div>
 
-    {{-- 🔥 SATU ROOT VUE UNTUK SEMUA --}}
+    {{-- MAIN CONTENT WRAPPER --}}
     <div id="homepageApp">
-
         <main class="content-wrapper">
             @yield('content')
         </main>
 
-        {{-- FOOTER (MASUK KE VUE) --}}
+        {{-- FOOTER --}}
         @include('partials.footer-donatur')
-
     </div>
 
     {{-- Bootstrap JS --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    {{-- Vue - load async --}}
+    {{-- Vue Production --}}
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 
     {{-- SweetAlert --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    {{-- 🔒 PROTECTED LINK --}}
+    {{-- 🔒 PROTECTED LINK HANDLER --}}
     <script>
         function handleProtectedLink(e, tujuan) {
             const isLoggedIn = localStorage.getItem('isLoggedIn');
-
             if (isLoggedIn !== 'true') {
                 e.preventDefault();
                 localStorage.setItem('redirect_after_login', tujuan);
-
                 Swal.fire({
                     icon: 'info',
                     title: 'Login Diperlukan',
@@ -105,18 +130,21 @@
                 }).then(() => {
                     window.location.href = '/auth/login';
                 });
-
                 return false;
             }
-
             return true;
         }
+        
+        // Mark page as ready after DOM loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('page-ready');
+        });
     </script>
 
     {{-- NAVBAR VUE --}}
-    <script src="{{ asset('assets/js/navbar.js') }}"></script>
+    <script src="{{ asset('assets/js/navbar.js') }}?v={{ time() }}"></script>
     {{-- FOOTER VUE --}}
-    <script src="{{ asset('assets/js/footer.js') }}"></script>
+    <script src="{{ asset('assets/js/footer.js') }}?v={{ time() }}"></script>
     {{-- PAGE SCRIPT --}}
     @stack('scripts')
 

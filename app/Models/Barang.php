@@ -30,6 +30,29 @@ class Barang extends Model
         'expired' => 'date',
     ];
 
+    protected $appends = ['foto_url'];
+
+    // Accessor untuk foto URL
+    public function getFotoUrlAttribute()
+    {
+        if (!$this->foto) {
+            return null;
+        }
+        
+        // Jika sudah base64, return langsung
+        if (str_starts_with($this->foto, 'data:image')) {
+            return $this->foto;
+        }
+        
+        // Jika sudah URL lengkap
+        if (str_starts_with($this->foto, 'http')) {
+            return $this->foto;
+        }
+        
+        // Jika path file, convert ke URL
+        return asset('storage/' . $this->foto);
+    }
+
     // Relationships
     public function pengambilanStok()
     {

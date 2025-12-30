@@ -1,6 +1,13 @@
+/* ========================================
+   FOOTER VUE - SEARCH FUNCTIONALITY
+   ======================================== */
 console.log('FOOTER VUE LOADED');
 
-if (document.getElementById('footerApp')) {
+// Wait for DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    const footerEl = document.getElementById('footerApp');
+    if (!footerEl) return;
+    
     Vue.createApp({
         data() {
             return {
@@ -16,13 +23,10 @@ if (document.getElementById('footerApp')) {
                     return;
                 }
 
-                const mainContent =
-                    document.getElementById('homepageApp') ||
-                    document.querySelector('main');
-
+                const mainContent = document.getElementById('homepageApp') || document.querySelector('main');
                 if (!mainContent) return;
 
-                // hapus highlight lama
+                // Hapus highlight lama
                 document.querySelectorAll('.highlight-text').forEach(el => {
                     el.replaceWith(el.textContent);
                 });
@@ -50,17 +54,14 @@ if (document.getElementById('footerApp')) {
                 walk(mainContent);
 
                 if (found) {
-                    document
-                        .querySelector('.highlight-text')
-                        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    document.querySelector('.highlight-text')?.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
                 } else {
-                    Swal.fire(
-                        'Tidak Ditemukan',
-                        `"${this.searchQuery}" tidak ada di halaman ini`,
-                        'warning'
-                    );
+                    Swal.fire('Tidak Ditemukan', `"${this.searchQuery}" tidak ada di halaman ini`, 'warning');
                 }
             }
         }
     }).mount('#footerApp');
-}
+});

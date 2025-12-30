@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Penghuni extends Model
 {
@@ -45,6 +46,29 @@ class Penghuni extends Model
         'tgl_masuk' => 'date',
         'tgl_keluar' => 'date',
     ];
+
+    protected $appends = ['foto_url'];
+
+    // Accessor untuk foto URL
+    public function getFotoUrlAttribute()
+    {
+        if (!$this->foto) {
+            return null;
+        }
+        
+        // Jika sudah base64, return langsung
+        if (str_starts_with($this->foto, 'data:image')) {
+            return $this->foto;
+        }
+        
+        // Jika sudah URL lengkap
+        if (str_starts_with($this->foto, 'http')) {
+            return $this->foto;
+        }
+        
+        // Jika path file, convert ke URL
+        return asset('storage/' . $this->foto);
+    }
 
     // Accessor untuk tahun masuk
     public function getTahunMasukAttribute()

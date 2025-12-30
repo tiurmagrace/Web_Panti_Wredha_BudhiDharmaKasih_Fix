@@ -118,9 +118,13 @@ class NotificationService
     {
         // Cek apakah sudah ada notifikasi serupa dalam 24 jam terakhir
         $existing = Notifikasi::where('type', 'stok_menipis')
-            ->where('metadata->barang_id', $barang->id)
             ->where('created_at', '>=', now()->subDay())
-            ->exists();
+            ->get()
+            ->filter(function ($notif) use ($barang) {
+                $metadata = $notif->metadata;
+                return isset($metadata['barang_id']) && $metadata['barang_id'] == $barang->id;
+            })
+            ->isNotEmpty();
 
         if ($existing) return null;
 
@@ -139,9 +143,13 @@ class NotificationService
     {
         // Cek apakah sudah ada notifikasi serupa dalam 24 jam terakhir
         $existing = Notifikasi::where('type', 'hampir_kadaluarsa')
-            ->where('metadata->barang_id', $barang->id)
             ->where('created_at', '>=', now()->subDay())
-            ->exists();
+            ->get()
+            ->filter(function ($notif) use ($barang) {
+                $metadata = $notif->metadata;
+                return isset($metadata['barang_id']) && $metadata['barang_id'] == $barang->id;
+            })
+            ->isNotEmpty();
 
         if ($existing) return null;
 
@@ -162,9 +170,13 @@ class NotificationService
     public static function barangKadaluarsa(Barang $barang)
     {
         $existing = Notifikasi::where('type', 'kadaluarsa')
-            ->where('metadata->barang_id', $barang->id)
             ->where('created_at', '>=', now()->subDay())
-            ->exists();
+            ->get()
+            ->filter(function ($notif) use ($barang) {
+                $metadata = $notif->metadata;
+                return isset($metadata['barang_id']) && $metadata['barang_id'] == $barang->id;
+            })
+            ->isNotEmpty();
 
         if ($existing) return null;
 
@@ -183,8 +195,8 @@ class NotificationService
     {
         $notifications = [];
 
-        // Cek stok menipis (sisa stok <= 20% dari stok awal atau <= 5)
-        $stokMenipis = Barang::whereRaw('sisa_stok <= GREATEST(brg_masuk * 0.2, 5)')
+        // Cek stok menipis (sisa stok <= 5)
+        $stokMenipis = Barang::where('sisa_stok', '<=', 5)
             ->where('sisa_stok', '>', 0)
             ->get();
 
@@ -194,9 +206,12 @@ class NotificationService
         }
 
         // Cek hampir kadaluarsa (dalam 30 hari)
+        $today = now()->startOfDay();
+        $thirtyDaysLater = now()->addDays(30)->endOfDay();
+        
         $hampirKadaluarsa = Barang::whereNotNull('expired')
-            ->whereDate('expired', '>', now())
-            ->whereDate('expired', '<=', now()->addDays(30))
+            ->where('expired', '>', $today)
+            ->where('expired', '<=', $thirtyDaysLater)
             ->where('sisa_stok', '>', 0)
             ->get();
 
@@ -207,7 +222,7 @@ class NotificationService
 
         // Cek sudah kadaluarsa
         $kadaluarsa = Barang::whereNotNull('expired')
-            ->whereDate('expired', '<', now())
+            ->where('expired', '<', $today)
             ->where('sisa_stok', '>', 0)
             ->get();
 

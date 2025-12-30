@@ -11,11 +11,22 @@ const { createApp } = window.Vue;
 createApp({
     data() {
         return {
-            alertStatus: null, isModalOpen: false, modalMode: 'detail',
-            currentPage: 1, itemsPerPage: 20, tempFormData: {}, editingId: null,
-            searchQuery: '', filterPaviliun: '', filterTahun: '', filterStatusPenghuni: '',
-            penghuniList: [], isLoading: true, // Start with loading true
-            currentUrl: window.location.href, activePage: 'penghuni', unreadCount: 0
+            alertStatus: null, 
+            isModalOpen: false, 
+            modalMode: 'detail',
+            currentPage: 1, 
+            itemsPerPage: 20, 
+            tempFormData: {}, 
+            editingId: null,
+            searchQuery: '', 
+            filterPaviliun: '', 
+            filterTahun: '', 
+            filterStatusPenghuni: '',
+            penghuniList: [], 
+            isLoading: true,
+            currentUrl: window.location.href, 
+            activePage: 'penghuni', 
+            unreadCount: 0
         }
     },
     
@@ -68,6 +79,7 @@ createApp({
 
     methods: {
         async loadDataPenghuni() {
+            this.isLoading = true;
             try {
                 const token = localStorage.getItem('admin_token');
                 const response = await fetch('/api/penghuni', {
@@ -100,7 +112,11 @@ createApp({
         },
         
         resetFilter() {
-            this.filterPaviliun = ''; this.filterTahun = ''; this.filterStatusPenghuni = ''; this.searchQuery = ''; this.currentPage = 1;
+            this.filterPaviliun = ''; 
+            this.filterTahun = ''; 
+            this.filterStatusPenghuni = ''; 
+            this.searchQuery = ''; 
+            this.currentPage = 1;
         },
 
         triggerFileInput() {
@@ -118,13 +134,22 @@ createApp({
 
         openModal(item, mode) {
             this.modalMode = mode;
-            this.tempFormData = { ...item };
+            // Copy data dan gunakan foto_url untuk display
+            this.tempFormData = { 
+                ...item,
+                foto: item.foto_url || item.foto // Gunakan foto_url jika ada
+            };
             this.editingId = item.id;
-            this.isModalOpen = true;
+            // Delay modal open to prevent flash
+            this.$nextTick(() => {
+                this.isModalOpen = true;
+            });
         },
 
         closeModal() {
-            this.isModalOpen = false; this.tempFormData = {}; this.editingId = null;
+            this.isModalOpen = false; 
+            this.tempFormData = {}; 
+            this.editingId = null;
         },
 
         async processEdit() {

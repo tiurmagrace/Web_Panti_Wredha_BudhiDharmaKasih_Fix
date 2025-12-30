@@ -24,9 +24,8 @@ createApp({
             totalDonasiBarang: 0,
             donasiTunaiBulanIni: 0,
             donasiBarangBulanIni: 0,
-            totalSembako: 0, 
-            totalPakaian: 0, 
-            totalObat: 0,
+            totalDonasiBulanIni: 0,
+            kategoriBulanIni: {},
             pendingDonasi: 0,
             // Statistik Barang/Stok
             totalStok: 0,
@@ -35,7 +34,8 @@ createApp({
             // UI
             currentUrl: window.location.href, 
             activePage: 'dashboard',
-            isLoading: false // Langsung false, biar UI muncul dulu
+            isLoading: true, // Start with loading
+            dataLoaded: false
         }
     },
     computed: {
@@ -68,67 +68,89 @@ createApp({
             };
 
             try {
-                // Load semua data sekaligus (parallel) untuk speed
-                const [penghuniRes, donasiRes, barangRes, feedbackRes, aktivitasRes, notifRes] = await Promise.all([
-                    fetch('/api/penghuni/statistics', { headers }),
-                    fetch('/api/donasi/admin/statistics', { headers }),
-                    fetch('/api/barang/statistics', { headers }),
-                    fetch('/api/feedback', { headers }),
-                    fetch('/api/aktivitas-log', { headers }),
-                    fetch('/api/notifikasi', { headers })
+                // Load critical data first (statistics) - parallel
+                const [penghuniRes, donasiRes, barangRes] = await Promise.all([
+                    fetch('/api/penghuni/statistics', { headers }).catch(() => ({ ok: false })),
+                    fetch('/api/donasi/admin/statistics', { headers }).catch(() => ({ ok: false })),
+                    fetch('/api/barang/statistics', { headers }).catch(() => ({ ok: false }))
                 ]);
 
-                const [penghuniData, donasiData, barangData, feedbackData, aktivitasData, notifData] = await Promise.all([
-                    penghuniRes.json(),
-                    donasiRes.json(),
-                    barangRes.json(),
-                    feedbackRes.json(),
-                    aktivitasRes.json(),
-                    notifRes.json()
-                ]);
-
-                // Penghuni Statistics
-                if (penghuniData.success) {
-                    this.totalPenghuni = penghuniData.data.total || 0;
+                // Process critical data immediately
+                if (penghuniRes.ok) {
+                    const penghuniData = await penghuniRes.json();
+                    if (penghuniData.success) {
+                        this.totalPenghuni = penghuniData.data.total || 0;
+                    }
                 }
 
-                // Donasi Statistics
-                if (donasiData.success) {
-                    this.totalDonasiTunai = donasiData.data.total_tunai || 0;
-                    this.totalDonasiBarang = donasiData.data.total_barang || 0;
-                    this.donasiTunaiBulanIni = donasiData.data.tunai_bulan_ini || 0;
-                    this.donasiBarangBulanIni = donasiData.data.barang_bulan_ini || 0;
-                    this.pendingDonasi = donasiData.data.pending || 0;
+                if (donasiRes.ok) {
+                    const donasiData = await donasiRes.json();
+                    if (donasiData.success) {
+                        this.totalDonasiTunai = donasiData.data.total_tunai || 0;
+                        this.totalDonasiBarang = donasiData.data.total_barang || 0;
+                        this.donasiTunaiBulanIni = donasiData.data.tunai_bulan_ini || 0;
+                        this.donasiBarangBulanIni = donasiData.data.barang_bulan_ini || 0;
+                        this.totalDonasiBulanIni = donasiData.data.total_donasi_bulan_ini || 0;
+                        this.kategoriBulanIni = donasiData.data.kategori_bulan_ini || {};
+                        this.pendingDonasi = donasiData.data.pending || 0;
+                    }
                 }
 
-                // Barang Statistics
-                if (barangData.success) {
-                    this.totalStok = barangData.data.total || 0;
-                    this.stokMenipis = barangData.data.stok_menipis || 0;
-                    this.jumlahHampirExpired = barangData.data.hampir_expired || 0;
+                if (barangRes.ok) {
+                    const barangData = await barangRes.json();
+                    if (barangData.success) {
+                        this.totalStok = barangData.data.total || 0;
+                        this.stokMenipis = barangData.data.stok_menipis || 0;
+                        this.jumlahHampirExpired = barangData.data.hampir_expired || 0;
+                    }
                 }
 
-                // Feedback
-                if (feedbackData.success) {
-                    this.feedbacks = feedbackData.data.slice(0, 5);
-                }
+                // Hide loading after critical data
+                this.isLoading = false;
+                this.dataLoaded = true;
 
-                // Aktivitas Log
-                if (aktivitasData.success) {
-                    this.activities = aktivitasData.data.slice(0, 5);
-                }
-
-                // Notifikasi
-                if (notifData.success) {
-                    this.notifications = notifData.data;
-                    this.displayedNotifications = notifData.data.slice(0, 5);
-                    this.unreadCount = notifData.data.filter(n => n.status === 'unread').length;
-                }
+                // Load secondary data (non-blocking)
+                this.loadSecondaryData(headers);
 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
-            } finally {
                 this.isLoading = false;
+            }
+        },
+
+        async loadSecondaryData(headers) {
+            try {
+                // Load feedback, aktivitas, notifikasi in background
+                const [feedbackRes, aktivitasRes, notifRes] = await Promise.all([
+                    fetch('/api/feedback', { headers }).catch(() => ({ ok: false })),
+                    fetch('/api/aktivitas-log', { headers }).catch(() => ({ ok: false })),
+                    fetch('/api/notifikasi', { headers }).catch(() => ({ ok: false }))
+                ]);
+
+                if (feedbackRes.ok) {
+                    const feedbackData = await feedbackRes.json();
+                    if (feedbackData.success) {
+                        this.feedbacks = feedbackData.data.slice(0, 5);
+                    }
+                }
+
+                if (aktivitasRes.ok) {
+                    const aktivitasData = await aktivitasRes.json();
+                    if (aktivitasData.success) {
+                        this.activities = aktivitasData.data.slice(0, 5);
+                    }
+                }
+
+                if (notifRes.ok) {
+                    const notifData = await notifRes.json();
+                    if (notifData.success) {
+                        this.notifications = notifData.data;
+                        this.displayedNotifications = notifData.data.slice(0, 5);
+                        this.unreadCount = notifData.data.filter(n => n.status === 'unread').length;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading secondary data:', error);
             }
         },
 

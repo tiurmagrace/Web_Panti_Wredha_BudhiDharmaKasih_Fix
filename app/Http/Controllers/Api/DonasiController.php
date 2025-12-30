@@ -660,6 +660,37 @@ class DonasiController extends Controller
                                  ->whereYear('tanggal', $tahun)
                                  ->count();
 
+        // Breakdown SEMUA donasi bulan ini (Tunai + Barang per kategori)
+        $kategoriBulanIni = [];
+        
+        // Tambahkan donasi tunai
+        if ($tunaiThisMonth > 0) {
+            $kategoriBulanIni['Tunai'] = $tunaiThisMonth;
+        }
+
+        // Breakdown donasi barang per kategori
+        $donasiBarangBulanIni = Donasi::where('jenis', 'Barang')
+                                      ->where('status_verifikasi', 'approved')
+                                      ->whereMonth('tanggal', $bulan)
+                                      ->whereYear('tanggal', $tahun)
+                                      ->get();
+
+        foreach ($donasiBarangBulanIni as $donasi) {
+            $detail = strtolower($donasi->detail ?? '');
+            $kategori = $this->mapKategoriBarang($detail);
+            
+            if (!isset($kategoriBulanIni[$kategori])) {
+                $kategoriBulanIni[$kategori] = 0;
+            }
+            $kategoriBulanIni[$kategori]++;
+        }
+
+        // Sort by jumlah descending
+        arsort($kategoriBulanIni);
+
+        // Total donasi bulan ini
+        $totalDonasiBulanIni = $tunaiThisMonth + $barangThisMonth;
+
         // Pending
         $pendingCount = Donasi::where('status_verifikasi', 'pending')->count();
 
@@ -688,6 +719,8 @@ class DonasiController extends Controller
                 'total_barang' => $totalBarang,
                 'tunai_bulan_ini' => $tunaiThisMonth,
                 'barang_bulan_ini' => $barangThisMonth,
+                'total_donasi_bulan_ini' => $totalDonasiBulanIni,
+                'kategori_bulan_ini' => $kategoriBulanIni,
                 'pending' => $pendingCount,
                 'donasi_per_bulan' => $donasiPerBulan
             ]

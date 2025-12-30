@@ -1,147 +1,157 @@
-const { createApp } = Vue;
+// Wait for DOM ready to avoid Vue conflicts
+document.addEventListener('DOMContentLoaded', function() {
+    const donasiEl = document.getElementById('donasiPilihanApp');
+    if (!donasiEl) return;
+    
+    const { createApp } = Vue;
 
-createApp({
-    data() {
-        return {
-            isLoggedIn: false,
-            currentUser: null,
-            logoutModalInstance: null,
-            searchQuery: ''
-        };
-    },
-
-    mounted() {
-        // ✅ HALAMAN INI PUBLIC → CUMA CEK STATUS
-        this.cekStatusLogin();
-    },
-
-    methods: {
-        // =========================
-        // CEK STATUS LOGIN
-        // =========================
-        cekStatusLogin() {
-            const status = localStorage.getItem('isLoggedIn');
-            const userData = localStorage.getItem('user_sementara');
-
-            if (status === 'true' && userData) {
-                this.isLoggedIn = true;
-                this.currentUser = JSON.parse(userData);
-            } else {
-                this.isLoggedIn = false;
-                this.currentUser = null;
-            }
+    createApp({
+        data() {
+            return {
+                isLoggedIn: false,
+                currentUser: null,
+                logoutModalInstance: null,
+                searchQuery: ''
+            };
         },
 
-        // =========================
-        // LOGOUT
-        // =========================
-        showLogoutModal() {
-            const modalEl = document.getElementById('logoutModal');
-            if (!modalEl) return;
-
-            this.logoutModalInstance = new bootstrap.Modal(modalEl);
-            this.logoutModalInstance.show();
+        mounted() {
+            // ✅ HALAMAN INI PUBLIC → CUMA CEK STATUS
+            this.cekStatusLogin();
         },
 
-        confirmLogout() {
-            Swal.fire({
-                title: 'Keluar?',
-                text: 'Apakah Anda yakin ingin logout?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonText: 'Batal',
-                confirmButtonText: 'Ya, Logout'
-            }).then(result => {
-                if (result.isConfirmed) {
-                    localStorage.removeItem('isLoggedIn');
-                    localStorage.removeItem('user_sementara');
-                    localStorage.removeItem('redirect_after_login');
+        methods: {
+            // =========================
+            // CEK STATUS LOGIN
+            // =========================
+            cekStatusLogin() {
+                const status = localStorage.getItem('isLoggedIn');
+                const userData = localStorage.getItem('user_sementara');
 
-                    window.location.href = '/';
+                if (status === 'true' && userData) {
+                    this.isLoggedIn = true;
+                    try {
+                        this.currentUser = JSON.parse(userData);
+                    } catch (e) {
+                        this.currentUser = null;
+                    }
+                } else {
+                    this.isLoggedIn = false;
+                    this.currentUser = null;
                 }
-            });
-        },
+            },
 
-        // =========================
-        // GERBANG DONASI (INI YANG PENTING)
-        // =========================
-        pilihDonasi(jenis) {
-            const tujuanRoute =
-                jenis === 'barang'
-                    ? '/donatur/donasi-barang'
-                    : '/donatur/donasi-tunai';
+            // =========================
+            // LOGOUT
+            // =========================
+            showLogoutModal() {
+                const modalEl = document.getElementById('logoutModal');
+                if (!modalEl) return;
 
-            // ✅ SUDAH LOGIN → LANGSUNG MASUK FORM
-            if (this.isLoggedIn) {
-                window.location.href = tujuanRoute;
-                return;
-            }
+                this.logoutModalInstance = new bootstrap.Modal(modalEl);
+                this.logoutModalInstance.show();
+            },
 
-            // ❌ BELUM LOGIN → SIMPAN TUJUAN TERAKHIR
-            localStorage.setItem('redirect_after_login', tujuanRoute);
+            confirmLogout() {
+                Swal.fire({
+                    title: 'Keluar?',
+                    text: 'Apakah Anda yakin ingin logout?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonText: 'Batal',
+                    confirmButtonText: 'Ya, Logout'
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        localStorage.removeItem('isLoggedIn');
+                        localStorage.removeItem('user_sementara');
+                        localStorage.removeItem('redirect_after_login');
 
-            Swal.fire({
-                icon: 'info',
-                title: 'Login Diperlukan',
-                text: 'Untuk mengisi formulir donasi, silakan Login atau Daftar akun terlebih dahulu.',
-                confirmButtonColor: '#1a5c7a'
-            }).then(() => {
-                window.location.href = '/auth/login';
-            });
-        },
+                        window.location.href = '/';
+                    }
+                });
+            },
 
-        // =========================
-        // SEARCH (TIDAK DISENTUH)
-        // =========================
-        performSearch() {
-            if (!this.searchQuery) return;
+            // =========================
+            // GERBANG DONASI (INI YANG PENTING)
+            // =========================
+            pilihDonasi(jenis) {
+                const tujuanRoute =
+                    jenis === 'barang'
+                        ? '/donatur/donasi-barang'
+                        : '/donatur/donasi-tunai';
 
-            document
-                .querySelectorAll('.highlight-text')
-                .forEach(el => { el.outerHTML = el.innerText; });
-
-            const term = this.searchQuery.trim();
-            if (term.length < 3) {
-                Swal.fire('Info', 'Kata kunci minimal 3 huruf', 'info');
-                return;
-            }
-
-            const content = document.querySelector('main');
-            const regex = new RegExp(`(${term})`, 'gi');
-            let found = false;
-
-            function highlightText(node) {
-                if (node.nodeType === 3 && regex.test(node.data)) {
-                    const span = document.createElement('span');
-                    span.innerHTML = node.data.replace(
-                        regex,
-                        '<span class="highlight-text">$1</span>'
-                    );
-                    node.parentNode.replaceChild(span, node);
-                    found = true;
-                } else if (
-                    node.nodeType === 1 &&
-                    node.childNodes &&
-                    !/(script|style)/i.test(node.tagName)
-                ) {
-                    node.childNodes.forEach(child => highlightText(child));
+                // ✅ SUDAH LOGIN → LANGSUNG MASUK FORM
+                if (this.isLoggedIn) {
+                    window.location.href = tujuanRoute;
+                    return;
                 }
-            }
 
-            highlightText(content);
+                // ❌ BELUM LOGIN → SIMPAN TUJUAN TERAKHIR
+                localStorage.setItem('redirect_after_login', tujuanRoute);
 
-            if (found) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Login Diperlukan',
+                    text: 'Untuk mengisi formulir donasi, silakan Login atau Daftar akun terlebih dahulu.',
+                    confirmButtonColor: '#1a5c7a'
+                }).then(() => {
+                    window.location.href = '/auth/login';
+                });
+            },
+
+            // =========================
+            // SEARCH
+            // =========================
+            performSearch() {
+                if (!this.searchQuery) return;
+
                 document
-                    .querySelector('.highlight-text')
-                    ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                Swal.fire(
-                    'Tidak Ditemukan',
-                    `Kata "${term}" tidak ada di halaman ini.`,
-                    'warning'
-                );
+                    .querySelectorAll('.highlight-text')
+                    .forEach(el => { el.outerHTML = el.innerText; });
+
+                const term = this.searchQuery.trim();
+                if (term.length < 3) {
+                    Swal.fire('Info', 'Kata kunci minimal 3 huruf', 'info');
+                    return;
+                }
+
+                const content = document.querySelector('main');
+                const regex = new RegExp(`(${term})`, 'gi');
+                let found = false;
+
+                function highlightText(node) {
+                    if (node.nodeType === 3 && regex.test(node.data)) {
+                        const span = document.createElement('span');
+                        span.innerHTML = node.data.replace(
+                            regex,
+                            '<span class="highlight-text">$1</span>'
+                        );
+                        node.parentNode.replaceChild(span, node);
+                        found = true;
+                    } else if (
+                        node.nodeType === 1 &&
+                        node.childNodes &&
+                        !/(script|style)/i.test(node.tagName)
+                    ) {
+                        node.childNodes.forEach(child => highlightText(child));
+                    }
+                }
+
+                highlightText(content);
+
+                if (found) {
+                    document
+                        .querySelector('.highlight-text')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    Swal.fire(
+                        'Tidak Ditemukan',
+                        `Kata "${term}" tidak ada di halaman ini.`,
+                        'warning'
+                    );
+                }
             }
         }
-    }
-}).mount('#donasiPilihanApp');
+    }).mount('#donasiPilihanApp');
+});

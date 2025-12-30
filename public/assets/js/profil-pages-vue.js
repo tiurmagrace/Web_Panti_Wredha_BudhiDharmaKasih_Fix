@@ -1,5 +1,17 @@
 // Function untuk inisialisasi Vue di halaman Profil (Sejarah, Visi Misi, Persyaratan)
 function initProfilPageVue(elementId) {
+    // Wait for DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => mountProfilVue(elementId));
+    } else {
+        mountProfilVue(elementId);
+    }
+}
+
+function mountProfilVue(elementId) {
+    const targetEl = document.getElementById(elementId);
+    if (!targetEl) return;
+    
     const { createApp } = Vue;
 
     createApp({
@@ -8,7 +20,7 @@ function initProfilPageVue(elementId) {
                 isLoggedIn: false,
                 currentUser: null,
                 logoutModalInstance: null,
-                searchQuery: '' // Tambahan untuk search footer
+                searchQuery: ''
             }
         },
         mounted() {
@@ -17,22 +29,26 @@ function initProfilPageVue(elementId) {
 
             if (status === 'true' && userData) {
                 this.isLoggedIn = true;
-                this.currentUser = JSON.parse(userData);
+                try {
+                    this.currentUser = JSON.parse(userData);
+                } catch (e) {
+                    this.currentUser = null;
+                }
             }
         },
         methods: {
             showLogoutModal() {
                 const modalEl = document.getElementById('logoutModal');
+                if (!modalEl) return;
                 this.logoutModalInstance = new bootstrap.Modal(modalEl);
                 this.logoutModalInstance.show();
             },
             confirmLogout() {
                 localStorage.removeItem('isLoggedIn');
                 localStorage.removeItem('redirect_after_login');
-                window.location.href = "../index.html"; 
+                window.location.href = '/'; 
             },
 
-            // --- FITUR PENCARIAN SAMA SEPERTI DI ATAS ---
             performSearch() {
                 if (!this.searchQuery) return;
 

@@ -94,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('barang')->middleware('admin')->group(function () {
         Route::get('/', [BarangController::class, 'index']);
         Route::get('/statistics', [BarangController::class, 'statistics']);
+        Route::post('/check-notifications', [BarangController::class, 'checkNotifications']);
         Route::get('/{id}', [BarangController::class, 'show']);
         Route::post('/', [BarangController::class, 'store']);
         Route::put('/{id}', [BarangController::class, 'update']);

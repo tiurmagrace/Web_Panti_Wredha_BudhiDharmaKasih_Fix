@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Penghuni;
 use App\Models\AktivitasLog;
+use App\Helpers\FileUploadHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -85,6 +86,14 @@ class PenghuniController extends Controller
                 if ($value !== null && $value !== '') {
                     if ($key === 'usia') {
                         $cleanData[$key] = is_numeric($value) ? (int) $value : null;
+                    } elseif ($key === 'foto') {
+                        // Simpan foto ke file storage (lebih baik untuk gambar besar)
+                        if (FileUploadHelper::isBase64Image($value)) {
+                            $filePath = FileUploadHelper::saveBase64ToFile($value, 'penghuni');
+                            $cleanData[$key] = $filePath ?: $value; // Fallback ke base64 jika gagal
+                        } else {
+                            $cleanData[$key] = $value;
+                        }
                     } else {
                         $cleanData[$key] = $value;
                     }
@@ -131,7 +140,21 @@ class PenghuniController extends Controller
             ], 404);
         }
 
-        $penghuni->update($request->all());
+        $data = $request->all();
+        
+        // Handle foto - simpan ke file jika base64
+        if (isset($data['foto']) && FileUploadHelper::isBase64Image($data['foto'])) {
+            $filePath = FileUploadHelper::saveBase64ToFile($data['foto'], 'penghuni');
+            if ($filePath) {
+                // Hapus foto lama jika ada dan bukan base64
+                if ($penghuni->foto && !FileUploadHelper::isBase64Image($penghuni->foto)) {
+                    FileUploadHelper::delete($penghuni->foto);
+                }
+                $data['foto'] = $filePath;
+            }
+        }
+
+        $penghuni->update($data);
 
         if (auth()->check()) {
             AktivitasLog::create([
