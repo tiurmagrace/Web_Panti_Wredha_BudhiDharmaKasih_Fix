@@ -152,6 +152,45 @@ Authorization: Bearer {token}
 
 ---
 
+### Update Profile
+```
+POST /auth/profile
+Authorization: Bearer {token}
+```
+
+**Request Body:**
+```json
+{
+    "nama": "John Doe Updated",
+    "email": "john.updated@example.com",
+    "no_hp": "081234567890",
+    "password": "newpassword123",
+    "password_confirmation": "newpassword123"
+}
+```
+
+**Notes:**
+- Semua field bersifat opsional (nullable)
+- Jika ingin update password, harus include `password_confirmation`
+- Email harus unik (tidak boleh sama dengan user lain)
+
+**Response Success (200):**
+```json
+{
+    "success": true,
+    "message": "Profil berhasil diperbarui",
+    "data": {
+        "id": 1,
+        "nama": "John Doe Updated",
+        "email": "john.updated@example.com",
+        "no_hp": "081234567890",
+        "role": "user"
+    }
+}
+```
+
+---
+
 ## 💰 DONASI ENDPOINTS
 
 ### Get Public Donasi List (Tanpa Login)

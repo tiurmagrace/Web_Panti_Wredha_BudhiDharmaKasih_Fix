@@ -24,8 +24,14 @@ createApp({
         const selectedItem = JSON.parse(localStorage.getItem('selectedDonasiForReport'));
         if (selectedItem) {
             this.item = selectedItem;
-            if (this.item.email) this.emailDonatur = this.item.email;
-            else this.emailDonatur = '';
+            // Auto-fill email dari data donasi (dari user relation)
+            if (this.item.email) {
+                this.emailDonatur = this.item.email;
+            } else if (this.item.user && this.item.user.email) {
+                this.emailDonatur = this.item.user.email;
+            } else {
+                this.emailDonatur = '';
+            }
             this.isiLaporan = `Terimakasih kepada ${this.item.donatur}
 Bantuanmu telah kami terima dan akan segera kami distribusikan kepada lansia yang membutuhkan.
 

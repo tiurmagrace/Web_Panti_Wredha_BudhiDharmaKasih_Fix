@@ -1,743 +1,344 @@
-# PEMBAGIAN PRESENTASI BACKEND
-## Panti Wredha Budi Dharma Kasih
+# PRESENTASI BACKEND - 10 MENIT (2 ORANG)
+## Sistem Informasi Panti Wredha Budi Dharma Kasih
 
 ---
 
-# ORANG 1 (55%) - Core Backend & Database
+# 👤 ORANG 1 - ARSITEKTUR, DATABASE & API (55% = 5.5 menit)
 
-## 1. Arsitektur & Setup Project (10 menit)
+---
 
-### File yang dijelaskan:
-- `.env` - Konfigurasi environment
-- `config/database.php` - Konfigurasi database
+## 1. TEKNOLOGI YANG DIGUNAKAN (45 detik)
 
-### Poin presentasi:
-- Struktur folder Laravel (MVC pattern)
-- Koneksi database PostgreSQL (Supabase)
-- Environment variables untuk keamanan
+| Komponen | Teknologi | Fungsi |
+|----------|-----------|--------|
+| Framework | **Laravel 10** | Framework PHP untuk membangun API dan web admin |
+| Database | **PostgreSQL** | Database relasional untuk menyimpan semua data |
+| Cloud | **Supabase** | Hosting database di cloud (AWS Singapore) |
+| Auth | **Laravel Sanctum** | Sistem login dengan token untuk keamanan API |
+| Frontend | **Blade + Vue.js** | Template engine + reactive UI untuk web admin |
 
-### Code yang ditunjukkan:
+### Kenapa Pilih Laravel?
+- Framework PHP paling populer dengan dokumentasi lengkap
+- Fitur bawaan: Authentication, Validation, ORM
+- Struktur rapi dengan pola MVC
+
+---
+
+## 2. ARSITEKTUR SISTEM (1.5 menit)
+
+### Diagram Arsitektur:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         INTERNET                                 │
+└─────────────────────────────────────────────────────────────────┘
+         │                                    │
+         ▼                                    ▼
+┌─────────────────┐                  ┌─────────────────┐
+│   Mobile App    │                  │   Web Browser   │
+│   (Flutter)     │                  │   (Chrome/dll)  │
+│                 │                  │                 │
+│   Donatur       │                  │   Admin Panti   │
+└────────┬────────┘                  └────────┬────────┘
+         │                                    │
+         │         HTTP Request (JSON)        │
+         └──────────────┬─────────────────────┘
+                        ▼
+              ┌─────────────────┐
+              │   BACKEND       │
+              │   Laravel 10    │
+              │                 │
+              │  • REST API     │
+              │  • Web Admin    │
+              │  • Auth System  │
+              └────────┬────────┘
+                       │
+                       │  SQL Query
+                       ▼
+              ┌─────────────────┐
+              │   DATABASE      │
+              │   PostgreSQL    │
+              │   (Supabase)    │
+              └─────────────────┘
+```
+
+### Penjelasan Flow:
+1. **Donatur** buka mobile app → Request ke Backend API
+2. **Admin** buka web browser → Request ke Backend
+3. **Backend Laravel** proses request → Query database
+4. **Database Supabase** simpan/ambil data
+5. Data **SINKRON** antara mobile dan web (database sama)
+
+### Pola MVC:
+- **Model** → Representasi tabel (User, Penghuni, Donasi, Barang)
+- **View** → Tampilan web admin (Blade + Vue.js)
+- **Controller** → Logic bisnis dan API endpoints
+
+---
+
+## 3. STRUKTUR DATABASE (1.5 menit)
+
+### Tabel-Tabel Utama:
+
+| No | Tabel | Fungsi | Field Penting |
+|----|-------|--------|---------------|
+| 1 | `users` | Data user (admin & donatur) | nama, email, password, role |
+| 2 | `penghuni` | Data lansia di panti | nik, nama, usia, paviliun, foto |
+| 3 | `donasi` | Data donasi masuk | donatur, jenis, jumlah, status_verifikasi |
+| 4 | `barang` | Stok barang di gudang | nama, kategori, sisa_stok, expired |
+| 5 | `notifikasi` | Notifikasi untuk user | type, title, text, status |
+| 6 | `feedback` | Pesan dari pengunjung | nama, email, pesan |
+| 7 | `aktivitas_log` | Log aktivitas admin | kategori, text, time |
+
+### Relasi Antar Tabel:
+
+```
+users ──┬──▶ donasi        (1 user bisa punya BANYAK donasi)
+        └──▶ notifikasi    (1 user bisa punya BANYAK notifikasi)
+
+barang ────▶ pengambilan_stok (1 barang punya RIWAYAT pengambilan)
+```
+
+### Koneksi Database Cloud:
+
 ```env
-# .env
 DB_CONNECTION=pgsql
 DB_HOST=aws-1-ap-southeast-1.pooler.supabase.com
 DB_PORT=5432
-DB_DATABASE=postgres
-DB_USERNAME=postgres.omlrnxdqdfxfaypaarho
+DB_SSLMODE=require   # Koneksi aman dengan SSL
+```
+
+**Keuntungan:** Database bisa diakses dari mana saja, backup otomatis, koneksi aman.
+
+---
+
+## 4. DAFTAR API ENDPOINTS (1.5 menit)
+
+### API Authentication:
+
+| Method | Endpoint | Fungsi |
+|--------|----------|--------|
+| POST | `/api/auth/register` | Registrasi donatur baru |
+| POST | `/api/auth/login` | Login user/admin |
+| POST | `/api/auth/logout` | Logout (hapus token) |
+
+### API Penghuni (Admin Only):
+
+| Method | Endpoint | Fungsi |
+|--------|----------|--------|
+| GET | `/api/penghuni` | Ambil semua data penghuni |
+| POST | `/api/penghuni` | Tambah penghuni baru |
+| PUT | `/api/penghuni/{id}` | Update data penghuni |
+| DELETE | `/api/penghuni/{id}` | Hapus penghuni |
+| GET | `/api/penghuni/statistics` | Statistik jumlah penghuni |
+
+### API Donasi:
+
+| Method | Endpoint | Fungsi |
+|--------|----------|--------|
+| GET | `/api/donasi` | Ambil semua donasi |
+| POST | `/api/donasi` | Submit donasi baru |
+| PATCH | `/api/donasi/{id}/verify` | Verifikasi donasi (admin) |
+| GET | `/api/donasi/admin/statistics` | Statistik donasi |
+
+### API Barang:
+
+| Method | Endpoint | Fungsi |
+|--------|----------|--------|
+| GET | `/api/barang` | Ambil semua stok barang |
+| POST | `/api/barang` | Tambah barang baru |
+| POST | `/api/barang/ambil-stok` | Catat pengambilan stok |
+| GET | `/api/barang/statistics` | Statistik stok gudang |
+
+**Total: 30+ endpoint API** untuk semua fitur aplikasi.
+
+---
+
+## 5. CONTOH RESPONSE API (30 detik)
+
+```json
+// GET /api/donasi/admin/statistics
+{
+    "success": true,
+    "data": {
+        "total_tunai": 45,
+        "total_barang": 32,
+        "total_donasi_bulan_ini": 8,
+        "kategori_bulan_ini": {
+            "Tunai": 3,
+            "Sembako": 4,
+            "Pakaian": 1
+        },
+        "pending": 2
+    }
+}
+```
+
+**Format standar:** `success` (true/false), `message`, `data`
+
+---
+---
+
+# 👤 ORANG 2 - AUTHENTICATION, FITUR & KEAMANAN (45% = 4.5 menit)
+
+---
+
+## 1. SISTEM AUTHENTICATION (1.5 menit)
+
+### Cara Kerja Login dengan Token:
+
+```
+┌──────────────┐                      ┌──────────────┐
+│    USER      │                      │   BACKEND    │
+└──────┬───────┘                      └──────┬───────┘
+       │                                     │
+       │  1. Kirim email + password          │
+       │────────────────────────────────────▶│
+       │                                     │
+       │                          2. Cek ke database
+       │                          3. Jika cocok, buat TOKEN
+       │                                     │
+       │  4. Kirim token ke user             │
+       │◀────────────────────────────────────│
+       │                                     │
+       │  5. Simpan token di device          │
+       │                                     │
+       │  6. Request berikutnya pakai token  │
+       │────────────────────────────────────▶│
+       │                                     │
+       │                          7. Validasi token
+       │                          8. Proses request
+```
+
+### Contoh Response Login:
+
+```json
+{
+    "success": true,
+    "message": "Login berhasil",
+    "data": {
+        "id": 1,
+        "nama": "Administrator",
+        "email": "admin@pantibdk.com",
+        "role": "admin"
+    },
+    "token": "1|abc123xyz789..."
+}
+```
+
+**Token disimpan di mobile app dan dipakai untuk semua request selanjutnya.**
+
+### Keamanan Password:
+
+```php
+// Password di-HASH, tidak disimpan plain text
+$user->password = Hash::make('password123');
+// Hasil: $2y$10$92IXUNpkjO0rOQ5byMi... (tidak bisa dibaca)
 ```
 
 ---
 
-## 2. Models & Migrations (15 menit)
+## 2. FITUR NOTIFIKASI OTOMATIS (1.5 menit)
 
-### File yang dijelaskan:
-- `app/Models/User.php`
-- `app/Models/Penghuni.php`
-- `app/Models/Donasi.php`
-- `app/Models/Barang.php`
-- `database/migrations/2025_12_20_132227_create_penghuni_table.php`
-- `database/migrations/2025_12_20_132328_create_donasi_and_barang_tables.php`
+### Kapan Notifikasi Dikirim:
 
-### Poin presentasi:
-- Eloquent ORM Laravel
-- Relasi antar tabel (hasMany, belongsTo)
-- Migration untuk membuat struktur database
-- Fillable, casts, dan hidden attributes
+| Event | Dikirim ke | Contoh Pesan |
+|-------|------------|--------------|
+| Donasi masuk | Admin | "Donasi Tunai dari Budi sebesar Rp 500.000 menunggu verifikasi" |
+| Donasi diterima | Donatur | "Terima kasih! Donasi Anda telah diterima" |
+| Donasi ditolak | Donatur | "Mohon maaf, donasi tidak dapat diverifikasi" |
+| Stok menipis | Admin | "Stok Beras tinggal 5 Karung" |
+| Barang hampir expired | Admin | "Susu UHT akan kadaluarsa dalam 18 hari" |
 
-### Code yang ditunjukkan:
+### Cara Kerja di Backend:
 
 ```php
-// app/Models/User.php
-class User extends Authenticatable
-{
-    use HasApiTokens, HasFactory, Notifiable;
-
-    protected $fillable = ['nama', 'email', 'password', 'no_hp', 'role'];
-    
-    protected $hidden = ['password', 'remember_token'];
-
-    // Relasi: User punya banyak Donasi
-    public function donasi()
-    {
-        return $this->hasMany(Donasi::class);
-    }
-
-    // Relasi: User punya banyak Notifikasi
-    public function notifikasi()
-    {
-        return $this->hasMany(Notifikasi::class);
-    }
-}
-```
-
-```php
-// app/Models/Penghuni.php
-class Penghuni extends Model
-{
-    protected $table = 'penghuni';
-    
-    protected $fillable = [
-        'nik', 'nama', 'ttl', 'usia', 'kota', 'alamat',
-        'agama', 'gender', 'status', 'pj', 'hubungan',
-        'telp', 'alamat_pj', 'status_sehat', 'penyakit',
-        'alergi', 'kebutuhan', 'obat', 'tgl_masuk',
-        'rujukan', 'paviliun', 'catatan', 'foto',
-        'status_penghuni', 'tgl_keluar', 'alasan_keluar'
-    ];
-}
-```
-
-```php
-// Migration penghuni
-Schema::create('penghuni', function (Blueprint $table) {
-    $table->id();
-    $table->string('nik')->unique();
-    $table->string('nama');
-    $table->string('ttl')->nullable();
-    $table->integer('usia')->nullable();
-    $table->string('kota')->nullable();
-    $table->text('alamat')->nullable();
-    $table->string('agama')->nullable();
-    $table->enum('gender', ['Pria', 'Wanita'])->nullable();
-    $table->string('status')->nullable();
-    // ... field lainnya
-    $table->timestamps();
-});
-```
-
----
-
-## 3. API Authentication (10 menit)
-
-### File yang dijelaskan:
-- `app/Http/Controllers/Api/AuthController.php`
-- `routes/api.php`
-- `config/sanctum.php`
-
-### Poin presentasi:
-- Laravel Sanctum untuk API authentication
-- Token-based authentication
-- Login, Register, Logout flow
-- Middleware auth:sanctum
-
-### Code yang ditunjukkan:
-
-```php
-// app/Http/Controllers/Api/AuthController.php
-
-// Register
-public function register(Request $request)
-{
-    $validated = $request->validate([
-        'nama' => 'required|string|max:255',
-        'email' => 'required|email|unique:users',
-        'password' => 'required|min:6',
-        'no_hp' => 'nullable|string'
-    ]);
-
-    $user = User::create([
-        'nama' => $validated['nama'],
-        'email' => $validated['email'],
-        'password' => Hash::make($validated['password']),
-        'no_hp' => $validated['no_hp'] ?? null,
-        'role' => 'donatur'
-    ]);
-
-    $token = $user->createToken('auth_token')->plainTextToken;
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Registrasi berhasil',
-        'data' => $user,
-        'token' => $token
-    ], 201);
-}
-
-// Login
-public function login(Request $request)
-{
-    $credentials = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required'
-    ]);
-
-    if (!Auth::attempt($credentials)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Email atau password salah'
-        ], 401);
-    }
-
-    $user = Auth::user();
-    $token = $user->createToken('auth_token')->plainTextToken;
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Login berhasil',
-        'data' => $user,
-        'token' => $token
-    ]);
-}
-```
-
-```php
-// routes/api.php
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/user', [AuthController::class, 'user']);
-});
-```
-
----
-
-## 4. API CRUD Utama (20 menit)
-
-### File yang dijelaskan:
-- `app/Http/Controllers/Api/PenghuniController.php`
-- `app/Http/Controllers/Api/DonasiController.php`
-- `app/Http/Controllers/Api/BarangController.php`
-
-### Poin presentasi:
-- RESTful API design
-- CRUD operations (Create, Read, Update, Delete)
-- Request validation
-- Response format JSON
-- Statistics endpoint
-
-### Code yang ditunjukkan:
-
-```php
-// app/Http/Controllers/Api/PenghuniController.php
-
-// GET semua penghuni
-public function index()
-{
-    $penghuni = Penghuni::orderBy('created_at', 'desc')->get();
-    
-    return response()->json([
-        'success' => true,
-        'data' => $penghuni
-    ]);
-}
-
-// POST tambah penghuni
+// Saat donasi masuk → otomatis kirim notifikasi ke admin
 public function store(Request $request)
 {
-    $validated = $request->validate([
-        'nik' => 'required|unique:penghuni',
-        'nama' => 'required|string',
-        'ttl' => 'nullable|string',
-        // ... validasi lainnya
-    ]);
-
-    $penghuni = Penghuni::create($validated);
-
-    // Log aktivitas
-    AktivitasLog::create([
-        'user_id' => auth()->id(),
-        'kategori' => 'Penghuni',
-        'text' => "Menambahkan penghuni baru: {$penghuni->nama}",
-        'time' => now()
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Penghuni berhasil ditambahkan',
-        'data' => $penghuni
-    ], 201);
-}
-
-// PUT update penghuni
-public function update(Request $request, $id)
-{
-    $penghuni = Penghuni::findOrFail($id);
-    $penghuni->update($request->all());
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Data penghuni berhasil diupdate',
-        'data' => $penghuni
-    ]);
-}
-
-// DELETE hapus penghuni
-public function destroy($id)
-{
-    $penghuni = Penghuni::findOrFail($id);
-    $penghuni->delete();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Penghuni berhasil dihapus'
-    ]);
-}
-
-// GET statistics
-public function statistics()
-{
-    return response()->json([
-        'success' => true,
-        'data' => [
-            'total' => Penghuni::where('status_penghuni', 'Aktif')->count(),
-            'total_semua' => Penghuni::count(),
-            'keluar' => Penghuni::where('status_penghuni', 'Keluar')->count(),
-            'meninggal' => Penghuni::where('status_penghuni', 'Meninggal')->count()
-        ]
-    ]);
+    $donasi = Donasi::create($request->all());
+    
+    // Kirim notifikasi otomatis
+    NotificationService::notifyAdmin(
+        'donasi_masuk',
+        'Donasi Baru Masuk',
+        "Donasi dari {$donasi->donatur} menunggu verifikasi"
+    );
+    
+    return response()->json(['success' => true]);
 }
 ```
 
 ```php
-// app/Http/Controllers/Api/DonasiController.php
-
-// GET statistics untuk dashboard
-public function adminStatistics()
+// Saat admin verifikasi → kirim notifikasi ke donatur
+public function verify($id)
 {
-    $now = now();
+    $donasi = Donasi::find($id);
+    $donasi->update(['status_verifikasi' => 'approved']);
     
-    return response()->json([
-        'success' => true,
-        'data' => [
-            'total_tunai' => Donasi::where('jenis', 'Tunai')
-                                   ->where('status_verifikasi', 'approved')
-                                   ->count(),
-            'total_barang' => Donasi::where('jenis', 'Barang')
-                                    ->where('status_verifikasi', 'approved')
-                                    ->count(),
-            'tunai_bulan_ini' => Donasi::where('jenis', 'Tunai')
-                                       ->whereMonth('tanggal', $now->month)
-                                       ->whereYear('tanggal', $now->year)
-                                       ->count(),
-            'pending' => Donasi::where('status_verifikasi', 'pending')->count()
-        ]
-    ]);
-}
-```
-
----
----
-
-# ORANG 2 (45%) - Fitur Tambahan & Integrasi
-
-## 1. API Pendukung (10 menit)
-
-### File yang dijelaskan:
-- `app/Http/Controllers/Api/NotifikasiController.php`
-- `app/Http/Controllers/Api/FeedbackController.php`
-- `app/Http/Controllers/Api/AktivitasLogController.php`
-- `app/Models/Notifikasi.php`
-
-### Poin presentasi:
-- Sistem notifikasi untuk donatur
-- Feedback dari pengunjung
-- Activity logging untuk admin
-
-### Code yang ditunjukkan:
-
-```php
-// app/Http/Controllers/Api/NotifikasiController.php
-
-public function index(Request $request)
-{
-    $user = $request->user();
-    
-    // Admin: lihat semua notifikasi
-    // Donatur: hanya notifikasi miliknya
-    if ($user->role === 'admin') {
-        $notifikasi = Notifikasi::orderBy('created_at', 'desc')->get();
-    } else {
-        $notifikasi = Notifikasi::where('user_id', $user->id)
-                                ->orderBy('created_at', 'desc')
-                                ->get();
-    }
-
-    return response()->json([
-        'success' => true,
-        'data' => $notifikasi
-    ]);
-}
-
-public function markAsRead($id)
-{
-    $notifikasi = Notifikasi::findOrFail($id);
-    $notifikasi->update(['status' => 'read']);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Notifikasi ditandai sudah dibaca'
-    ]);
-}
-
-public function markAllAsRead(Request $request)
-{
-    Notifikasi::where('user_id', $request->user()->id)
-              ->where('status', 'unread')
-              ->update(['status' => 'read']);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Semua notifikasi ditandai sudah dibaca'
-    ]);
-}
-```
-
-```php
-// app/Models/Notifikasi.php
-class Notifikasi extends Model
-{
-    protected $table = 'notifikasi';
-    
-    protected $fillable = [
-        'user_id', 'type', 'title', 'text', 
-        'date', 'status', 'metadata'
-    ];
-
-    protected $casts = [
-        'metadata' => 'array',
-        'date' => 'date'
-    ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+    NotificationService::notifyUser(
+        $donasi->user_id,
+        'donasi_diterima',
+        'Donasi Anda Telah Diterima',
+        'Terima kasih atas donasi Anda!'
+    );
 }
 ```
 
 ---
 
-## 2. Fitur Khusus (15 menit)
+## 3. KEAMANAN SISTEM (1 menit)
 
-### File yang dijelaskan:
-- `app/Http/Controllers/Api/DonasiController.php` (method verify & thankYou)
-- `app/Helpers/FileUploadHelper.php`
+| Aspek | Implementasi | Penjelasan |
+|-------|--------------|------------|
+| Password | **Bcrypt Hash** | Password tidak disimpan plain text |
+| API Access | **Token Sanctum** | Setiap request harus ada token valid |
+| Validasi | **Request Validation** | Semua input dicek sebelum diproses |
+| Role | **Admin vs Donatur** | Akses berbeda sesuai role |
+| Database | **SSL Connection** | Koneksi ke Supabase terenkripsi |
 
-### Poin presentasi:
-- Verifikasi donasi (approve/reject)
-- Kirim notifikasi ke donatur
-- Upload foto dengan Base64
-
-### Code yang ditunjukkan:
-
-```php
-// Verifikasi Donasi
-public function verify(Request $request, $id)
-{
-    $donasi = Donasi::findOrFail($id);
-    
-    $validated = $request->validate([
-        'status_verifikasi' => 'required|in:approved,rejected',
-        'catatan' => 'nullable|string'
-    ]);
-
-    $donasi->update([
-        'status_verifikasi' => $validated['status_verifikasi']
-    ]);
-
-    // Kirim notifikasi ke donatur
-    if ($donasi->user_id) {
-        $isApproved = $validated['status_verifikasi'] === 'approved';
-        
-        Notifikasi::create([
-            'user_id' => $donasi->user_id,
-            'type' => $isApproved ? 'donasi_diterima' : 'donasi_ditolak',
-            'title' => $isApproved ? 'Donasi Anda Telah Diterima' : 'Status Donasi',
-            'text' => $isApproved 
-                ? "Terima kasih! Donasi {$donasi->jenis} Anda telah diverifikasi."
-                : "Mohon maaf, donasi Anda tidak dapat diverifikasi. Alasan: {$validated['catatan']}",
-            'date' => now(),
-            'status' => 'unread',
-            'metadata' => ['donasi_id' => $donasi->id]
-        ]);
-    }
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Donasi berhasil diverifikasi',
-        'data' => $donasi
-    ]);
-}
-
-// Kirim Ucapan Terima Kasih
-public function sendThankYou(Request $request, $id)
-{
-    $donasi = Donasi::findOrFail($id);
-
-    if (!$donasi->user_id) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Donasi ini tidak memiliki user terdaftar'
-        ], 400);
-    }
-
-    $pesan = $request->pesan ?? 'Kami mengucapkan terima kasih yang sebesar-besarnya...';
-
-    Notifikasi::create([
-        'user_id' => $donasi->user_id,
-        'type' => 'ucapan_terimakasih',
-        'title' => 'Ucapan Terima Kasih',
-        'text' => $pesan,
-        'date' => now(),
-        'status' => 'unread',
-        'metadata' => ['donasi_id' => $donasi->id]
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Ucapan terima kasih berhasil dikirim'
-    ]);
-}
-```
+### Contoh Validasi Input:
 
 ```php
-// app/Helpers/FileUploadHelper.php
-class FileUploadHelper
-{
-    public static function uploadBase64Image($base64String, $folder = 'uploads')
-    {
-        // Decode base64
-        if (preg_match('/^data:image\/(\w+);base64,/', $base64String, $type)) {
-            $base64String = substr($base64String, strpos($base64String, ',') + 1);
-            $type = strtolower($type[1]);
-            
-            $base64String = base64_decode($base64String);
-            
-            // Generate filename
-            $filename = uniqid() . '.' . $type;
-            $path = public_path("uploads/{$folder}");
-            
-            if (!file_exists($path)) {
-                mkdir($path, 0755, true);
-            }
-            
-            file_put_contents("{$path}/{$filename}", $base64String);
-            
-            return "/uploads/{$folder}/{$filename}";
-        }
-        
-        return null;
-    }
-}
+$request->validate([
+    'nama' => 'required|string|max:255',
+    'email' => 'required|email|unique:users',
+    'password' => 'required|min:6'
+]);
+// Jika tidak valid → return error, tidak diproses
 ```
 
 ---
 
-## 3. Database Seeder (10 menit)
+## 4. KESIMPULAN (30 detik)
 
-### File yang dijelaskan:
-- `database/seeders/DatabaseSeeder.php`
-- `database/seeders/MigrateFromMysqlSeeder.php`
+### Backend Laravel Menyediakan:
 
-### Poin presentasi:
-- Seeder untuk data awal (admin, donatur, penghuni, dll)
-- Migrasi data dari MySQL ke PostgreSQL
-- Perbedaan syntax MySQL vs PostgreSQL
+| Fitur | Keterangan |
+|-------|------------|
+| ✅ REST API | 30+ endpoint untuk mobile app Flutter |
+| ✅ Web Admin | Dashboard untuk pengelola panti |
+| ✅ Database Cloud | Data tersimpan aman di Supabase |
+| ✅ Notifikasi Otomatis | Admin dan donatur dapat info realtime |
+| ✅ Keamanan | Token auth, password hash, validasi input |
 
-### Code yang ditunjukkan:
+```
+Mobile App  ──┐
+              ├──▶  Backend Laravel  ──▶  Database Supabase
+Web Admin   ──┘
 
-```php
-// database/seeders/DatabaseSeeder.php
-
-public function run(): void
-{
-    // Disable foreign key untuk PostgreSQL
-    DB::statement('SET session_replication_role = replica');
-    
-    // Truncate tables
-    DB::table('donasi')->truncate();
-    DB::table('barang')->truncate();
-    DB::table('penghuni')->truncate();
-    DB::table('users')->truncate();
-    
-    // Enable kembali
-    DB::statement('SET session_replication_role = DEFAULT');
-
-    // Buat Admin
-    User::create([
-        'nama' => 'Administrator',
-        'email' => 'admin@pantibdk.com',
-        'password' => 'password123',
-        'role' => 'admin'
-    ]);
-
-    // Buat Donatur
-    User::create([
-        'nama' => 'Budi Santoso',
-        'email' => 'budi@example.com',
-        'no_hp' => '081234567890',
-        'password' => 'password123',
-        'role' => 'donatur'
-    ]);
-
-    // Buat Penghuni
-    Penghuni::create([
-        'nik' => '3303012345670001',
-        'nama' => 'Suparman',
-        'ttl' => 'Purbalingga, 15 Mei 1950',
-        'usia' => 74,
-        'paviliun' => 'BOUGENVILLE 1',
-        // ... data lainnya
-    ]);
-}
+Data SINKRON karena pakai database yang SAMA
 ```
 
-```php
-// database/seeders/MigrateFromMysqlSeeder.php
-
-public function run(): void
-{
-    // Konfigurasi MySQL lokal
-    config(['database.connections.mysql_local' => [
-        'driver' => 'mysql',
-        'host' => '127.0.0.1',
-        'database' => 'panti_wredha_bdk',
-        'username' => 'root',
-        'password' => '',
-    ]]);
-
-    // Disable foreign key di PostgreSQL
-    DB::statement('SET session_replication_role = replica');
-
-    // Migrasi setiap tabel
-    $tables = ['users', 'penghuni', 'donasi', 'barang', 'notifikasi'];
-
-    foreach ($tables as $table) {
-        $data = DB::connection('mysql_local')->table($table)->get();
-        
-        if ($data->isNotEmpty()) {
-            DB::table($table)->truncate();
-            DB::table($table)->insert(
-                $data->map(fn($row) => (array) $row)->toArray()
-            );
-        }
-    }
-
-    DB::statement('SET session_replication_role = DEFAULT');
-}
-```
+**Terima kasih!**
 
 ---
-
-## 4. Integrasi & Deployment (10 menit)
-
-### File yang dijelaskan:
-- `.env` (konfigurasi Supabase)
-- `API_DOCUMENTATION.md`
-- `routes/api.php`
-
-### Poin presentasi:
-- Koneksi ke Supabase PostgreSQL
-- Session Pooler vs Direct Connection
-- Dokumentasi API untuk tim mobile
-- Testing API dengan browser/Postman
-
-### Code yang ditunjukkan:
-
-```env
-# .env - Konfigurasi Supabase
-DB_CONNECTION=pgsql
-DB_HOST=aws-1-ap-southeast-1.pooler.supabase.com
-DB_PORT=5432
-DB_DATABASE=postgres
-DB_USERNAME=postgres.omlrnxdqdfxfaypaarho
-DB_PASSWORD=pantiwredapbg
-DB_SSLMODE=require
-```
-
-```php
-// routes/api.php - Semua endpoint API
-
-// Public routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/admin/login', [AuthController::class, 'adminLogin']);
-
-// Protected routes
-Route::middleware('auth:sanctum')->group(function () {
-    // Auth
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/user', [AuthController::class, 'user']);
-    
-    // Penghuni
-    Route::apiResource('penghuni', PenghuniController::class);
-    Route::get('/penghuni/statistics', [PenghuniController::class, 'statistics']);
-    
-    // Donasi
-    Route::apiResource('donasi', DonasiController::class);
-    Route::patch('/donasi/{id}/verify', [DonasiController::class, 'verify']);
-    Route::post('/donasi/{id}/thank-you', [DonasiController::class, 'sendThankYou']);
-    Route::get('/donasi/admin/statistics', [DonasiController::class, 'adminStatistics']);
-    
-    // Barang
-    Route::apiResource('barang', BarangController::class);
-    Route::get('/barang/statistics', [BarangController::class, 'statistics']);
-    
-    // Notifikasi
-    Route::get('/notifikasi', [NotifikasiController::class, 'index']);
-    Route::patch('/notifikasi/{id}/mark-as-read', [NotifikasiController::class, 'markAsRead']);
-    Route::patch('/notifikasi/mark-all-as-read', [NotifikasiController::class, 'markAllAsRead']);
-    
-    // Feedback & Log
-    Route::apiResource('feedback', FeedbackController::class);
-    Route::get('/aktivitas-log', [AktivitasLogController::class, 'index']);
-});
-```
-
 ---
 
-## DEMO API (Untuk Kedua Presenter)
+# RINGKASAN PEMBAGIAN
 
-### Endpoint yang bisa di-demo:
-
-1. **Login Admin**
-   ```
-   POST /api/admin/login
-   Body: { "email": "admin@pantibdk.com", "password": "password123" }
-   ```
-
-2. **Get Penghuni**
-   ```
-   GET /api/penghuni
-   Header: Authorization: Bearer {token}
-   ```
-
-3. **Tambah Donasi**
-   ```
-   POST /api/donasi
-   Body: { "donatur": "Test", "jenis": "Tunai", "jumlah": "Rp 100.000" }
-   ```
-
-4. **Verifikasi Donasi**
-   ```
-   PATCH /api/donasi/1/verify
-   Body: { "status_verifikasi": "approved" }
-   ```
-
-5. **Get Statistics**
-   ```
-   GET /api/donasi/admin/statistics
-   ```
-
----
-
-## Tips Presentasi
-
-1. **Buka 2 tab browser:**
-   - Tab 1: Web admin (http://localhost:8000/admin)
-   - Tab 2: API testing (Postman atau browser)
-
-2. **Tunjukkan flow lengkap:**
-   - Login → Get data → Create → Update → Delete
-
-3. **Jelaskan response JSON:**
-   - success: true/false
-   - message: pesan untuk user
-   - data: data yang diminta
-
-4. **Highlight keamanan:**
-   - Password di-hash
-   - Token authentication
-   - Validasi input
+| Orang | Materi | Persentase | Durasi |
+|-------|--------|------------|--------|
+| **Orang 1** | Teknologi, Arsitektur, Database, API Endpoints | **55%** | **5.5 menit** |
+| **Orang 2** | Authentication, Notifikasi, Keamanan, Kesimpulan | **45%** | **4.5 menit** |
+| **Total** | | **100%** | **10 menit** |

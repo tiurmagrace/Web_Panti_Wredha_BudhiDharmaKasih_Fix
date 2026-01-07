@@ -96,7 +96,12 @@ createApp({
             this.searchQuery = '';
         },
         goToGeneratePage(item) {
-            localStorage.setItem('selectedDonasiForReport', JSON.stringify(item));
+            // Siapkan data dengan email dari user relation
+            const dataToSave = {
+                ...item,
+                email: item.user ? item.user.email : ''
+            };
+            localStorage.setItem('selectedDonasiForReport', JSON.stringify(dataToSave));
             window.location.href = '/admin/generate-laporan';
         },
         logoutAdmin() {
