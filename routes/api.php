@@ -47,6 +47,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/profile', [AuthController::class, 'profile']);
     Route::post('/auth/profile', [AuthController::class, 'updateProfile']);
 
+    // Test endpoint untuk debug
+    Route::get('/test/auth', function () {
+        return response()->json([
+            'success' => true,
+            'user' => auth()->user(),
+            'is_admin' => auth()->user()?->isAdmin()
+        ]);
+    });
+
     /*
     |----------------------------------------------------------------------
     | PENGHUNI ROUTES (Admin Only)

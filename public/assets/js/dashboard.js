@@ -85,6 +85,7 @@ createApp({
 
                 if (donasiRes.ok) {
                     const donasiData = await donasiRes.json();
+                    console.log('📊 Donasi Response:', donasiData);
                     if (donasiData.success) {
                         this.totalDonasiTunai = donasiData.data.total_tunai || 0;
                         this.totalDonasiBarang = donasiData.data.total_barang || 0;
@@ -93,7 +94,17 @@ createApp({
                         this.totalDonasiBulanIni = donasiData.data.total_donasi_bulan_ini || 0;
                         this.kategoriBulanIni = donasiData.data.kategori_bulan_ini || {};
                         this.pendingDonasi = donasiData.data.pending || 0;
+                        console.log('✅ Donasi Data Loaded:', {
+                            tunai: this.donasiTunaiBulanIni,
+                            barang: this.donasiBarangBulanIni,
+                            total: this.totalDonasiBulanIni,
+                            kategori: this.kategoriBulanIni
+                        });
+                    } else {
+                        console.error('❌ Donasi Response Error:', donasiData.message);
                     }
+                } else {
+                    console.error('❌ Donasi Fetch Failed:', donasiRes.status);
                 }
 
                 if (barangRes.ok) {
